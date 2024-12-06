@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="font-family: 'Arial', sans-serif; color: #333;">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold" style="color: #4a90e2;">📚 Class List</h2>
+        <p class="text-muted">Select a class to view the results.</p>
+    </div>
+
+    <div class="card shadow-lg rounded-4" style="border: none;">
+        <div class="card-body p-4" style="background: linear-gradient(135deg, #8e44ad, #3498db); color: white; border-radius: 10px;">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="class-select" class="form-label fw-bold" style="font-size: 1.2rem;">Select Class:</label>
+                    <select
+                        class="form-select dropdown-animation"
+                        name="class_id"
+                        id="class-select"
+                        style="font-size: 1.1rem; padding: 0.8rem 1rem; border: none; border-radius: 8px; background-color: #fff; color: #555;"
+                    >
+                        {% for class in classes %}
+                        <option value="{{ class.id }}">{{ class.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="text-center">
+                    <button
+                        type="submit"
+                        class="btn fw-bold text-uppercase shadow-sm"
+                        id="viewResultsButton"
+                        style="
+                            padding: 0.8rem 2rem;
+                            border-radius: 50px;
+                            font-size: 1rem;
+                            background-color: #e74c3c;
+                            color: white;
+                            transition: all 0.3s ease;
+                        "
+                    >
+                        View Results
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Inline JavaScript for Dynamic Effects -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const viewResultsButton = document.getElementById("viewResultsButton");
+        setInterval(function () {
+            // Generate a random color
+            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+            viewResultsButton.style.backgroundColor = randomColor;
+        }, 2000); // Change color every 2 seconds
+
+        // Button hover effect
+        viewResultsButton.addEventListener("mouseover", function () {
+            viewResultsButton.style.transform = "scale(1.1)";
+            viewResultsButton.style.boxShadow = "0 5px 15px rgba(0, 0, 0, 0.2)";
+        });
+
+        viewResultsButton.addEventListener("mouseout", function () {
+            viewResultsButton.style.transform = "scale(1)";
+            viewResultsButton.style.boxShadow = "none";
+        });
+    });
+</script>
+
+<!-- Inline CSS for Animation and Styling -->
+<style>
+    body {
+        background-color: #f4f6f9;
+    }
+
+    .dropdown-animation {
+        animation: dropdownAppear 0.8s ease-in-out;
+    }
+
+    @keyframes dropdownAppear {
+        0% {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    button:hover {
+        background: #c0392b !important;
+    }
+</style>
+{% endblock %}

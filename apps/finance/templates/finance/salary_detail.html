@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Invoice Detail</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom CSS styles */
+        .container {
+            text-align: center; /* Center align content */
+        }
+        .invoice-details {
+            margin-top: 50px; /* Add space from the top */
+        }
+        .invoice-details p {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Salary Invoice Detail</h1>
+        <hr class="invoice-details">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <p><strong>Staff:</strong> {{ invoice.staff }}</p>
+                <p><strong>Month:</strong> {{ invoice.month }}</p>
+                <p><strong>Gross Salary:</strong> <span id="gross_salary">{{ invoice.gross_salary }}</span></p>
+                <p><strong>Allowance:</strong> <span id="allowance">{{ invoice.allowance }}</span></p>
+                <p><strong>Net Salary:</strong> <span id="net_salary">{{ invoice.net_salary }}</span></p>
+                <p><strong>Deductions:</strong> <span id="deductions">{{ invoice.deductions }}</span></p>
+                <p><strong>Total Given Salary:</strong> <span id="total_given_salary"></span></p>
+                <p><strong>Issued Date:</strong> {{ invoice.issued_date }}</p>
+                <p><strong>Remarks:</strong> {{ invoice.remarks }}</p>
+            </div>
+        </div>
+        <a href="{% url 'salary-invoice-update' invoice.pk %}" class="btn btn-primary">Update Invoice</a>
+        <a href="{% url 'salary-invoice-delete' invoice.pk %}" class="btn btn-danger">Delete Invoice</a>
+        <a href="{% url 'salary-invoice-list' %}" class="btn btn-secondary">Back to List</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const grossSalary = parseFloat(document.getElementById('gross_salary').innerText);
+            const allowance = parseFloat(document.getElementById('allowance').innerText);
+            const netSalary = parseFloat(document.getElementById('net_salary').innerText);
+            const deductions = parseFloat(document.getElementById('deductions').innerText);
+
+            // Calculate Total Given Salary
+            const totalGivenSalary = netSalary - deductions;
+
+            // Display Total Given Salary
+            document.getElementById('total_given_salary').innerText = totalGivenSalary.toFixed(2);
+        });
+    </script>
+</body>
+</html>
+{% endblock content %}

@@ -1,0 +1,273 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+    <title>ELEMENTS LAKEZONE PRE & PRIMARY SCHOOL</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'plugins/toastr/toastr.min.css' %}">
+    <!-- overlayScrollbars -->
+    <link rel="stylesheet" href="{% static 'plugins/overlayScrollbars/css/OverlayScrollbars.min.css' %}">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}">
+    <!-- Login Page CSS -->
+    <link rel="stylesheet" href="{% static 'dist/css/login-page.css' %}">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <style>
+        body {
+            background: url("{% static 'registration/abstract-solid-shining-yellow-gradient-studio-wall-room-background.jpg' %}") no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Source Sans Pro', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container-login100 {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            min-height: 100vh;
+        }
+        .login-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 400px;
+            max-width: 100%;
+            text-align: center;
+            background: linear-gradient(to bottom, #FF8008, #FFC837); /* Gradient background for form */
+            padding: 20px;
+        }
+        .login-header {
+            background: none; /* Remove background from header */
+            padding: 20px;
+            color: white;
+        }
+        .login-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .login-header img {
+            width: 50px;
+            margin-top: 10px;
+        }
+        .login-body {
+            padding: 20px;
+            background: white;
+            border-radius: 10px; /* Add border radius for inner white box */
+        }
+        .login-footer {
+            background: none; /* Remove background from footer */
+            padding: 20px;
+        }
+        .wrap-input100 {
+            position: relative;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .input100 {
+            font-size: 16px;
+            color: #ff6347; /* Tomato color */
+            line-height: 1.2;
+            display: block;
+            width: 100%;
+            background: #f2f2f2;
+            height: 50px;
+            border-radius: 25px;
+            padding: 0 30px 0 68px;
+        }
+        .input100::placeholder {
+            color: #ff6347; /* Tomato color for placeholder */
+        }
+        .symbol-input100 {
+            position: absolute;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 55px;
+            height: 100%;
+            top: 0;
+            left: 15px;
+            pointer-events: none;
+        }
+        .symbol-input100 i {
+            color: inherit;
+        }
+        .password-eye {
+            position: absolute;
+            font-size: 18px;
+            color: #FF7518; /* Pumpkin color for show password icon */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 55px;
+            height: 100%;
+            top: 0;
+            right: 15px;
+            cursor: pointer;
+        }
+        .login100-form-btn {
+            font-size: 16px;
+            color: white;
+            line-height: 1.2;
+            text-transform: uppercase;
+            width: 100%;
+            height: 50px;
+            border-radius: 25px;
+            background: #ff8008;
+            background: -webkit-linear-gradient(to right, #ffc837, #ff8008);
+            background: -o-linear-gradient(to right, #ffc837, #ff8008);
+            background: -moz-linear-gradient(to right, #ffc837, #ff8008);
+            background: linear-gradient(to right, #ffc837, #ff8008);
+            outline: none !important;
+            border: none;
+            cursor: pointer;
+        }
+        .login100-form-btn:hover {
+            background: #ff8008;
+        }
+        .text-center {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .txt1 {
+            font-size: 14px;
+            color: #999;
+            line-height: 1.5;
+        }
+        .txt2 {
+            font-size: 14px;
+            color: #ff8008;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-login100">
+        <div class="login-container">
+            <div class="login-header">
+                <h1 style="color:green;"><u>ELEMENTS LAKEZONE PRE & PRIMARY SCHOOL</u></h1>
+                <img src="{% static 'dist/img/Lovepik_com-450006636-Vector High School Building.png' %}" alt="School Logo" style="width: 40%;">
+            </div>
+            <div class="login-body">
+                <form class="login100-form validate-form" method="post" action="{% url 'custom_login' %}">
+                    {% csrf_token %}
+                    <div class="wrap-input100 validate-input" data-validate="Valid email is required: ex@abc.xyz">
+                        <input class="input100" id="id_username" name="username" type="text" placeholder="Username">
+                        <span class="symbol-input100" style="color: blue;"> <!-- Blue color for username icon -->
+                            <i class="fa fa-user" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <div class="wrap-input100 validate-input" data-validate="Password is required">
+                        <input class="input100" type="password" id="id_password" name="password" placeholder="Password">
+                        <span class="symbol-input100" style="color: brown;"> <!-- Brown color for password icon -->
+                            <i class="fa fa-lock" aria-hidden="true"></i>
+                        </span>
+                        <span class="password-eye" onclick="togglePasswordVisibility()">
+                            <i class="fa fa-eye" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <!-- Hidden fields for latitude and longitude -->
+                    <input type="hidden" id="latitude" name="latitude">
+                    <input type="hidden" id="longitude" name="longitude">
+                    <div>
+                        <button class="login100-form-btn" type="submit" value="Login">Login</button>
+                    </div>
+                    <div class="text-center p-t-12">
+                        <span class="txt1">Remember</span>
+                        <a class="txt2" href="#">Forgot password?</a>
+                    </div>
+                </form>
+            </div>
+            <div class="login-footer">
+            </div>
+        </div>
+    </div>
+
+    <!-- REQUIRED SCRIPTS -->
+    <!-- jQuery -->
+    <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'dist/js/jquery.formset.js' %}"></script>
+    <!-- Bootstrap -->
+    <script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'plugins/toastr/toastr.min.js' %}"></script>
+    <!-- overlayScrollbars -->
+    <script src="{% static 'plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js' %}"></script>
+    <!-- AdminLTE App -->
+    <script src="{% static 'dist/js/adminlte.js' %}"></script>
+    <!-- OPTIONAL SCRIPTS -->
+    <script src="{% static 'dist/js/demo.js' %}"></script>
+
+    {% if messages %}
+    {% for message in messages %}
+    <script type=text/javascript>
+        toastr.options.progressBar = true;
+        toastr.{{ message.tags }}('{{ message }}')
+    </script>
+    {% endfor %}
+    {% endif %}
+
+    <script>
+        function togglePasswordVisibility() {
+            var passwordField = document.getElementById("id_password");
+            var passwordEye = document.querySelector(".password-eye i");
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                passwordEye.classList.remove("fa-eye");
+                passwordEye.classList.add("fa-eye-slash");
+            } else {
+                passwordField.type = "password";
+                passwordEye.classList.remove("fa-eye-slash");
+                passwordEye.classList.add("fa-eye");
+            }
+        }
+
+        // Get the user's location
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition, showError);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function showPosition(position) {
+            document.getElementById("latitude").value = position.coords.latitude;
+            document.getElementById("longitude").value = position.coords.longitude;
+        }
+
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
+            }
+        }
+
+        // Call getLocation on page load
+        document.addEventListener("DOMContentLoaded", function() {
+            getLocation();
+        });
+    </script>
+</body>
+</html>

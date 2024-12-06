@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content-header %}
+<div class="card-header bg-primary text-white" data-aos="fade-down" data-aos-duration="1000" style="border-radius: 10px;">
+  <div class="card-tools d-flex justify-content-between">
+    <div>
+      <a href="#" class="btn btn-outline-light btn-sm" id="print-button"><i class="fas fa-print"></i> Print</a>
+      <a href="{% url 'staff-update' object.id %}" class="btn btn-outline-light btn-sm">
+        <i class="fas fa-edit"></i> Edit
+      </a>
+      <a href="{% url 'staff-delete' object.id %}" class="btn btn-outline-light btn-sm">
+        <i class="fas fa-times"></i> Delete
+      </a>
+    </div>
+    <button class="btn btn-outline-light btn-sm" onclick="goBack()">
+      <i class="fas fa-arrow-left"></i> Back
+    </button>
+  </div>
+</div>
+{% endblock content-header %}
+
+{% block content %}
+<div class="row mb-4" data-aos="fade-up" data-aos-duration="1000">
+  <div class="col-sm-4 text-center">
+    <a href="{% url 'test_upload' object.id %}">
+      {% if object.passport_photo %}
+        <img src="{{ object.passport_photo.url }}" class="rounded-circle shadow" style="width: 150px; height: 150px; border: 4px solid #007bff;">
+      {% else %}
+        <img src="{% static 'dist/img/avatar.png' %}" class="rounded-circle shadow" style="width: 150px; height: 150px; border: 4px solid #007bff;">
+      {% endif %}
+    </a>
+    <h4 class="mt-3" style="color: #007bff;">{{ object.firstname }} {{ object.middle_name }} {{ object.surname }}</h4>
+    <h5>{{ object.current_class }}</h5>
+    <h5>{{ object.get_gender_display }} | {{ object.get_current_status_display }}</h5>
+  </div>
+  <div class="col-sm-8">
+    <div class="card shadow" style="border-radius: 10px;">
+      <div class="card-body">
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Date of Birth:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.date_of_birth }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Mobile Number:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.mobile_number }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Address:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.address }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Comments:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.others }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">NIDA ID:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.nida_id }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">TIN Number:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.tin_number }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Guarantor:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.guarantor }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Contract Duration:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.contract_duration }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Contract Start Date:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.contract_start_date }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Contract End Date:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.contract_end_date }}</div>
+        </div>
+        <div class="form-group row border-bottom pb-2">
+          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Salary:</label>
+          <div class="col-sm-8" style="color:gray">{{ object.salary }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block morejs %}
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+    integrity="sha384-NkU32VZyLgnbxVuSw/5CCg9zp4xA0mxZiuDAi9g4SM/LuIbr99HyrCP4KiLlXg+T"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"
+    integrity="sha384-5T5l20F6jpxmo3SiRUt7KA6uP6q/eFN6wxrbykcIcSVuW0eECCqxWOjNnlpmDYBp"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+  // Initialize AOS
+  AOS.init();
+
+  // Function to handle printing
+  function handlePrint() {
+    window.print();
+  }
+
+  // Function to handle going back
+  function goBack() {
+    window.history.back();
+  }
+
+  // Add click event listener to the print button
+  document.addEventListener('DOMContentLoaded', function () {
+    const printButton = document.getElementById('print-button');
+    printButton.addEventListener('click', handlePrint);
+  });
+</script>
+{% endblock morejs %}

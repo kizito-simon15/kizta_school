@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  <title>
+    {% if object %}
+      Update {{ object }}
+    {% else %}
+      Add New Pupil
+    {% endif %}
+  </title>
+{% endblock title %}
+
+{% block content %}
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f4c3; /* Light lime background */
+    margin: 0;
+    padding: 20px;
+  }
+
+  .form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #f3e5f5, #e8f5e9); /* Gradient background */
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 1s ease-in-out, pop 0.5s ease-in-out;
+    border-left: 10px solid #8e24aa; /* Purple border */
+  }
+
+  .form-header {
+    font-size: 1.8em;
+    color: #8e24aa; /* Purple text color */
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: slideIn 1s ease-in-out;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="file"],
+  textarea,
+  select {
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    border: 2px solid #4caf50; /* Green border */
+    font-size: 1em;
+    background-color: #fff3e0; /* Light orange background */
+    transition: border-color 0.3s ease, background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  input[type="file"]:focus,
+  textarea:focus,
+  select:focus {
+    border-color: #ff5722; /* Deep orange border on focus */
+    outline: none;
+    box-shadow: 0 0 15px rgba(255, 87, 34, 0.4);
+    background-color: #ffe0b2; /* Lighter orange background on focus */
+    transform: scale(1.02);
+  }
+
+  input[type="submit"] {
+    padding: 12px 25px;
+    background-color: #ff5722; /* Deep orange background */
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  input[type="submit"]:hover {
+    background-color: #e64a19; /* Darker orange on hover */
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-primary {
+    display: inline-block;
+    text-align: center;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pop {
+    0% {
+      transform: scale(0.8);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group label {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #4caf50; /* Green text color */
+    font-size: 1.1em;
+    animation: slideIn 0.8s ease-in-out;
+  }
+</style>
+
+<div class="form-container">
+  <div class="form-header">
+    {% if object %}
+      Update {{ object }}
+    {% else %}
+      Add New Pupil
+    {% endif %}
+  </div>
+
+  <form action="" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="form-group">
+      {% include 'corecode/form_snippet.html' %}
+    </div>
+
+    <div class="form-group">
+      {% if object %}
+        <input type="submit" class="btn btn-primary" value="Update Record">
+      {% else %}
+        <input type="submit" class="btn btn-primary" value="Add New Pupil">
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock content %}

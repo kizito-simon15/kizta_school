@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Completed Pupils{% endblock title %}
+
+{% block breadcrumb %}
+<div class="d-flex justify-content-between mb-3">
+  <a class="btn btn-outline-primary rounded-pill" href="{% url 'student-create' %}"><i class="fas fa-plus"></i> New Pupil</a>
+  <a class="btn btn-outline-primary rounded-pill" href="{% url 'student-upload' %}"><i class="fas fa-upload"></i> Upload Pupils</a>
+  <a class="btn btn-outline-success rounded-pill" href="{% url 'select-allui-class' %}"><i class="fas fa-check"></i> Create Alumni</a>
+</div>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="container shadow-sm p-4 mb-5 bg-white rounded" data-aos="fade-up" data-aos-duration="1000">
+  <!-- Select dropdown for current classes -->
+  <div class="form-group mb-3">
+    <label for="classSelect" class="fw-semibold text-teal">Select Class:</label>
+    <select id="classSelect" class="form-control rounded-pill" style="background-color: teal; color: white;">
+      <option value="">All</option>
+      {% for student_class in student_classes %}
+        <option value="{{ student_class.name }}">{{ student_class.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Filter button -->
+  <button onclick="filterStudents()" class="btn btn-outline-primary rounded-pill mb-3">Filter</button>
+
+  <!-- Search field -->
+  <div class="form-group mb-4">
+    <input type="text" id="searchInput" class="form-control rounded-pill" placeholder="Search...">
+  </div>
+
+  <!-- Summary table for total male, female, and all students -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover table-striped shadow-sm">
+      <thead class="thead-teal text-center">
+        <tr>
+          <th scope="col">Total Male Pupils</th>
+          <th scope="col">Total Female Pupils</th>
+          <th scope="col">Total Pupils</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="text-center">
+          <td id="maleCount">0</td>
+          <td id="femaleCount">0</td>
+          <td id="totalCount">0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="container shadow-sm p-4 bg-white rounded" data-aos="fade-up" data-aos-duration="1000">
+  <div class="table-responsive">
+    <table id="studenttable" class="table table-bordered table-hover table-striped shadow-sm">
+      <thead class="thead-teal text-center">
+        <tr>
+          <th scope="col">S/N</th>
+          <th scope="col">Registration Number</th>
+          <th scope="col">Fullname</th>
+          <th scope="col">Current Class</th>
+          <th scope="col">Gender</th>
+          <th scope="col">Father's Mobile</th>
+          <th scope="col">Mother's Mobile</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in students %}
+          <tr class="clickable-row text-center" data-href="{% url 'student-detail' student.id %}">
+            <td>{{ forloop.counter }}</td>
+            <td>{{ student.registration_number }}</td>
+            <td>{{ student.firstname }} {{ student.middle_name }} {{ student.surname }}</td>
+            <td>{{ student.current_class }}</td>
+            <td>{{ student.get_gender_display }}</td>
+            <td>{{ student.father_mobile_number }}</td>
+            <td>{{ student.mother_mobile_number }}</td>
+            <td>
+              {% if student.current_status == "active" %}
+                <span class="badge bg-success">Active</span>
+              {% else %}
+                <span class="badge bg-danger">Inactive</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}
+
+{% block morejs %}
+<script>
+  // Function to update the summary table
+  function updateSummary() {
+    const rows = document.getElementById("studenttable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    let maleCount = 0;
+    let femaleCount = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].style.display !== "none") {
+        const gender = rows[i].getElementsByTagName("td")[4].innerText.toLowerCase();
+        if (gender === "male") {
+          maleCount++;
+        } else if (gender === "female") {
+          femaleCount++;
+        }
+      }
+    }
+
+    document.getElementById("maleCount").innerText = maleCount;
+    document.getElementById("femaleCount").innerText = femaleCount;
+    document.getElementById("totalCount").innerText = maleCount + femaleCount;
+  }
+
+  // Function to filter students based on selected class
+  function filterStudents() {
+    const selectedClass = document.getElementById("classSelect").value;
+    const rows = document.getElementById("studenttable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    for (let i = 0; i < rows.length; i++) {
+      const currentClass = rows[i].getElementsByTagName("td")[3].innerText;
+      if (selectedClass === "" || selectedClass === currentClass) {
+        rows[i].style.display = "";
+      } else {
+        rows[i].style.display = "none";
+      }
+    }
+    updateSummary();
+    resetSerialNumbers();
+  }
+
+  // Function to reset serial numbers after filtering
+  function resetSerialNumbers() {
+    const visibleRows = document.querySelectorAll("#studenttable tbody tr:not([style*='display: none'])");
+    for (let i = 0; i < visibleRows.length; i++) {
+      visibleRows[i].getElementsByTagName("td")[0].innerText = i + 1;
+    }
+  }
+
+  // Function to filter students based on search input
+  document.getElementById("searchInput").addEventListener("keyup", function() {
+    const filter = this.value.toUpperCase();
+    const rows = document.getElementById("studenttable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    for (let i = 0; i < rows.length; i++) {
+      const cells = rows[i].getElementsByTagName("td");
+      let found = false;
+      for (let j = 0; j < cells.length; j++) {
+        const textValue = cells[j].textContent || cells[j].innerText;
+        if (textValue.toUpperCase().indexOf(filter) > -1) {
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+        rows[i].style.display = "";
+      } else {
+        rows[i].style.display = "none";
+      }
+    }
+    updateSummary();
+    resetSerialNumbers();
+  });
+
+  // Initial update of the summary table and serial numbers on page load
+  document.addEventListener("DOMContentLoaded", function() {
+    updateSummary();
+    resetSerialNumbers();
+  });
+
+  // Make rows clickable
+  document.addEventListener("DOMContentLoaded", function() {
+    const rows = document.querySelectorAll(".clickable-row");
+    rows.forEach(row => {
+      row.addEventListener("click", () => {
+        window.location.href = row.getAttribute("data-href");
+      });
+    });
+  });
+</script>
+<script src="{% static 'js/animations/animations.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+  // Initialize AOS
+  AOS.init();
+</script>
+
+<!-- Add this CSS for animations and iPhone-like interface -->
+<style>
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  #studenttable tbody tr {
+    animation: fadeInUp 0.5s ease forwards;
+  }
+
+  .thead-teal {
+    background-color: #5ac8fa;
+    color: white;
+  }
+
+  .clickable-row {
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .clickable-row:hover {
+    background-color: #f1f1f1;
+  }
+
+  .btn-outline-primary {
+    border-color: #007aff;
+    color: #007aff;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: #007aff;
+    color: white;
+  }
+
+  .badge {
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+  }
+
+  .badge.bg-success {
+    background-color: #28a745;
+  }
+
+  .badge.bg-danger {
+    background-color: #dc3545;
+  }
+
+  .sort-arrow {
+    cursor: pointer;
+    padding-left: 5px;
+    color: #5ac8fa;
+  }
+</style>
+{% endblock morejs %}

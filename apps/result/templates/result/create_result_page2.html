@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}
+  Select Subjects for Result Creation
+{% endblock title %}
+
+{% block content %}
+<div class="container mt-5" style="font-family: 'Arial', sans-serif;">
+    <!-- Header Section -->
+    <div class="card shadow-lg rounded-4 p-4 mb-4" style="background: linear-gradient(135deg, #6a11cb, #2575fc); color: white;">
+        <h3 class="text-center fw-bold">
+            <i class="fas fa-book-reader"></i> Select Subjects
+        </h3>
+        <p class="text-center mt-2">
+            <i class="fas fa-users"></i> You selected <b>{{ count }} students</b> from the previous page.
+        </p>
+    </div>
+
+    <!-- Form Section -->
+    <form method="POST" class="p-4 shadow-lg rounded-4" style="background-color: white;">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <!-- Session Field -->
+        <div class="mb-4">
+            <label for="{{ form.session.id_for_label }}" class="form-label fw-bold text-secondary">
+                <i class="fas fa-calendar-alt"></i> {{ form.session.label }}
+            </label>
+            {{ form.session|add_class:"form-control shadow-sm rounded-3" }}
+            <small class="text-danger">{{ form.session.errors }}</small>
+        </div>
+
+        <!-- Term Field -->
+        <div class="mb-4">
+            <label for="{{ form.term.id_for_label }}" class="form-label fw-bold text-secondary">
+                <i class="fas fa-layer-group"></i> {{ form.term.label }}
+            </label>
+            {{ form.term|add_class:"form-control shadow-sm rounded-3" }}
+            <small class="text-danger">{{ form.term.errors }}</small>
+        </div>
+
+        <!-- Exam Field -->
+        <div class="mb-4">
+            <label for="{{ form.exam.id_for_label }}" class="form-label fw-bold text-secondary">
+                <i class="fas fa-clipboard-list"></i> {{ form.exam.label }}
+            </label>
+            {{ form.exam|add_class:"form-control shadow-sm rounded-3" }}
+            <small class="text-danger">{{ form.exam.errors }}</small>
+        </div>
+
+        <!-- Subjects Field -->
+        <div class="mb-4">
+            <label for="{{ form.subjects.id_for_label }}" class="form-label fw-bold text-secondary">
+                <i class="fas fa-book"></i> {{ form.subjects.label }}
+            </label>
+            {{ form.subjects|add_class:"form-check-input shadow-sm" }}
+            <small class="text-danger">{{ form.subjects.errors }}</small>
+        </div>
+
+        <!-- Hidden Fields -->
+        <input type="hidden" name="finish" value="True">
+        <input type="hidden" name="students" value="{{ students }}">
+
+        <!-- Submit Button -->
+        <div class="text-center">
+            <button
+                type="submit"
+                class="btn btn-success shadow-lg fw-bold text-uppercase"
+                style="
+                    padding: 0.8rem 2rem;
+                    border-radius: 50px;
+                    font-size: 1.1rem;
+                    background-color: #27ae60;
+                    color: white;
+                    transition: all 0.3s ease;
+                "
+            >
+                <i class="fas fa-check-circle"></i> Create
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Additional CSS -->
+<style>
+    body {
+        background: linear-gradient(180deg, #f4f6f9, #ffffff);
+    }
+
+    .form-label {
+        font-size: 1.1rem;
+    }
+
+    .btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 576px) {
+        .form-label {
+            font-size: 1rem;
+        }
+
+        button {
+            font-size: 1rem;
+            padding: 0.6rem 1.5rem;
+        }
+    }
+</style>
+
+<!-- Font Awesome CDN -->
+<link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    rel="stylesheet"
+/>
+{% endblock content %}

@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content-header %}
+<div class="card-header d-flex justify-content-between align-items-center bg-light shadow-sm rounded-pill">
+    <div class="card-tools">
+        <button class="btn btn-outline-secondary btn-sm rounded-pill shadow-sm" onclick="printPage()">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <a href="{% url 'student-update' object.id %}" class="btn btn-outline-primary btn-sm rounded-pill shadow-sm">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{% url 'student-delete' object.id %}" class="btn btn-outline-danger btn-sm rounded-pill shadow-sm">
+            <i class="fas fa-trash-alt"></i> Delete
+        </a>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill shadow-sm" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <a href="{% url 'student-list' %}" class="btn btn-outline-info btn-sm rounded-pill shadow-sm">
+            <i class="fas fa-list"></i> Student List
+        </a>
+    </div>
+</div>
+{% endblock content-header %}
+
+{% block content %}
+<script>
+    function printPage() {
+        window.print();
+    }
+
+    function calculateTotal() {
+        let totalPayable = 0;
+        let totalPaid = 0;
+        let totalBalance = 0;
+
+        document.querySelectorAll('#payment-table tbody tr').forEach(row => {
+            const payable = parseFloat(row.cells[1].innerText);
+            const paid = parseFloat(row.cells[2].innerText);
+            const balance = parseFloat(row.cells[3].innerText);
+
+            totalPayable += payable;
+            totalPaid += paid;
+            totalBalance += balance;
+        });
+
+        document.getElementById('total-payable').innerText = totalPayable.toFixed(2);
+        document.getElementById('total-paid').innerText = totalPaid.toFixed(2);
+        document.getElementById('total-balance').innerText = totalBalance.toFixed(2);
+    }
+
+    function openTable() {
+        const table = document.getElementById('payment-table');
+        table.style.opacity = 1;
+
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach((row, index) => {
+            setTimeout(() => {
+                row.style.opacity = 1;
+            }, 100 * index);
+        });
+    }
+
+    function goBack() {
+        window.history.back();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        calculateTotal();
+        openTable();
+    });
+</script>
+
+<div class="container-fluid mt-4" data-aos="fade-up">
+    <div class="row mb-4">
+        <div class="col-md-4 text-center">
+            <div class="mb-3">
+                {% if object.passport %}
+                    <img src="{{ object.passport.url }}" alt="Student Photo" class="img-fluid rounded-circle shadow-lg" style="width: 150px; height: 150px; border: 3px solid #007aff;">
+                {% else %}
+                    <img src="{% static 'dist/img/avatar.png' %}" alt="Default Avatar" class="img-fluid rounded-circle shadow-lg" style="width: 150px; height: 150px; border: 3px solid #007aff;">
+                {% endif %}
+            </div>
+            <h4 class="fw-bold text-primary animate__animated animate__fadeInLeft">{{ object.firstname }} {{ object.middle_name }} {{ object.surname }}</h4>
+            <p class="text-secondary animate__animated animate__fadeInLeft">{{ object.registration_number }}</p>
+            <p class="text-success animate__animated animate__fadeInRight">{{ object.current_class }}</p>
+            <p class="text-secondary animate__animated animate__fadeInRight">{{ object.get_gender_display }} | {{ object.get_current_status_display }}</p>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow-sm p-4" style="border-radius: 15px; background-color: #f7f9fc;">
+                <div class="mb-2 border-bottom pb-2">
+                    <label class="fw-semibold text-dark">Date of Birth:</label>
+                    <p class="text-dark">{{ object.date_of_birth }}</p>
+                </div>
+                <div class="mb-2 border-bottom pb-2">
+                    <label class="fw-semibold text-dark">Father's Mobile Number:</label>
+                    <p class="text-dark">{{ object.father_mobile_number }}</p>
+                </div>
+                <div class="mb-2 border-bottom pb-2">
+                    <label class="fw-semibold text-dark">Mother's Mobile Number:</label>
+                    <p class="text-dark">{{ object.mother_mobile_number }}</p>
+                </div>
+                <div class="mb-2 border-bottom pb-2">
+                    <label class="fw-semibold text-dark">Address:</label>
+                    <p class="text-dark">{{ object.address }}</p>
+                </div>
+                <div class="mb-2">
+                    <label class="fw-semibold text-dark">Comments:</label>
+                    <p class="text-dark">{{ object.others }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mt-4 mb-3 fw-bold text-primary" data-aos="fade-up">Invoice/Payment History</h4>
+    <div class="overflow-auto" style="max-width: 100%; overflow-x: scroll;">
+        {% if payments %}
+            <div class="card p-3 shadow-sm" style="border-radius: 15px;">
+                <table id="payment-table" class="table table-bordered table-hover table-striped" style="opacity: 0; transition: opacity 0.5s ease; min-width: 800px;">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th class="text-primary">For</th>
+                            <th class="text-primary">Amount Payable</th>
+                            <th class="text-primary">Amount Paid</th>
+                            <th class="text-primary">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                            <tr class="clickable-row" data-href="{% url 'invoice-detail' payment.id %}" style="opacity: 0;">
+                                <td>{{ payment.session }} - {{ payment.installment }} - {{ payment.class_for }}</td>
+                                <td>{{ payment.total_amount_payable }}</td>
+                                <td>{{ payment.total_amount_paid }}</td>
+                                <td>{{ payment.balance }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Total:</th>
+                            <td id="total-payable" class="fw-bold text-primary"></td>
+                            <td id="total-paid" class="fw-bold text-primary"></td>
+                            <td id="total-balance" class="fw-bold text-primary"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">There is no payment history for {{ object }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .card-header, .btn {
+        border-radius: 20px;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #f1f1f1;
+        color: #000;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #007aff;
+        color: #fff;
+    }
+
+    .btn-outline-danger:hover {
+        background-color: #ff3b30;
+        color: #fff;
+    }
+
+    .btn-outline-info:hover {
+        background-color: #5ac8fa;
+        color: #fff;
+    }
+
+    .table thead {
+        background-color: #e0f7fa;
+        border-bottom: 2px solid #007aff;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f1faff;
+    }
+
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .clickable-row:hover {
+        background-color: #f9f9f9;
+    }
+
+    .fw-bold {
+        font-weight: 700;
+    }
+
+    .overflow-auto {
+        white-space: nowrap;
+    }
+</style>
+{% endblock content %}

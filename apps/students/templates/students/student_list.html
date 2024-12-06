@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Active Pupils{% endblock title %}
+
+{% block breadcrumb %}
+<div class="d-flex justify-content-between mb-3">
+    <a class="btn btn-primary rounded-pill shadow-sm" href="{% url 'student-create' %}"><i class="fas fa-plus"></i> New pupil</a>
+    <a class="btn btn-primary rounded-pill shadow-sm" href="{% url 'student-upload' %}"><i class="fas fa-upload"></i> Upload pupils</a>
+</div>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up" data-aos-duration="1000">
+    <div class="row mb-4">
+        <div class="col-12 text-start">
+            <button id="archivedButton" class="btn btn-outline-primary rounded-pill shadow-sm"><i class="fas fa-archive"></i> Archived</button>
+            <button id="alumniButton" class="btn btn-outline-primary rounded-pill shadow-sm"><i class="fas fa-graduation-cap"></i> Alumni</button>
+        </div>
+    </div>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <div class="form-group mb-3">
+            <label for="classSelect" class="fw-semibold" style="color: teal;">Select Class:</label>
+            <select id="classSelect" class="form-control form-select shadow-sm">
+                <option value="">All</option>
+                {% for student_class in student_classes %}
+                    <option value="{{ student_class.name }}">{{ student_class.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button onclick="filterStudents()" class="btn btn-teal rounded-pill shadow-sm mb-3">Filter</button>
+        <div class="form-group">
+            <input type="text" id="searchInput" class="form-control rounded-pill shadow-sm" placeholder="Search by name, registration number, etc.">
+        </div>
+    </div>
+
+    <div class="summary-table mb-4">
+        <table class="table table-hover table-bordered table-responsive-md shadow-sm">
+            <thead class="thead-teal text-center">
+                <tr>
+                    <th>Total Male Pupils</th>
+                    <th>Total Female Pupils</th>
+                    <th>Total Pupils</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="text-center">
+                    <td id="maleCount">0</td>
+                    <td id="femaleCount">0</td>
+                    <td id="totalCount">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="table-container" class="card p-4 shadow-sm" style="overflow-x: auto;">
+        <table id="studenttable" class="table table-bordered table-hover table-responsive-md">
+            <thead class="thead-teal">
+                <tr>
+                    <th>S/N</th>
+                    <th>Registration Number <span class="sort-arrow" onclick="sortTable(1, 'number', 'asc')">&#9650;</span><span class="sort-arrow" onclick="sortTable(1, 'number', 'desc')">&#9660;</span></th>
+                    <th>Fullname <span class="sort-arrow" onclick="sortTable(2, 'string', 'asc')">&#9650;</span><span class="sort-arrow" onclick="sortTable(2, 'string', 'desc')">&#9660;</span></th>
+                    <th>Current Class</th>
+                    <th>Gender <span class="sort-arrow" onclick="sortTable(4, 'gender', 'asc')">&#9650;</span><span class="sort-arrow" onclick="sortTable(4, 'gender', 'desc')">&#9660;</span></th>
+                    <th>Father's Mobile</th>
+                    <th>Mother's Mobile</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                    <tr class="clickable-row" data-href="{% url 'student-detail' student.id %}">
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ student.registration_number }}</td>
+                        <td>{{ student.firstname }} {{ student.middle_name }} {{ student.surname }}</td>
+                        <td>{{ student.current_class }}</td>
+                        <td>{{ student.get_gender_display }}</td>
+                        <td>{{ student.father_mobile_number }}</td>
+                        <td>{{ student.mother_mobile_number }}</td>
+                        <td class="text-center">
+                            {% if student.current_status == "active" %}
+                                <i class="fas fa-check-circle text-success"></i>
+                            {% else %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="scrolling-container" class="mt-3">
+    <div id="scrolling-bar"></div>
+</div>
+
+{% endblock content %}
+
+{% block morejs %}
+<script>
+  document.getElementById('archivedButton').addEventListener('click', function() {
+    window.location.href = "{% url 'inactive-student-list' %}";
+  });
+
+  document.getElementById('alumniButton').addEventListener('click', function() {
+    window.location.href = "{% url 'completed-students' %}";
+  });
+
+  function updateSummary() {
+    const rows = document.getElementById("studenttable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    let maleCount = 0;
+    let femaleCount = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].style.display !== "none") {
+        const gender = rows[i].getElementsByTagName("td")[4].innerText.toLowerCase();
+        if (gender === "male") {
+          maleCount++;
+        } else if (gender === "female") {
+          femaleCount++;
+        }
+      }
+    }
+
+    document.getElementById("maleCount").innerText = maleCount;
+    document.getElementById("femaleCount").innerText = femaleCount;
+    document.getElementById("totalCount").innerText = maleCount + femaleCount;
+  }
+
+  function filterStudents() {
+    const selectedClass = document.getElementById("classSelect").value;
+    const rows = document.getElementById("studenttable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    for (let i = 0; i < rows.length; i++) {
+      const currentClass = rows[i].getElementsByTagName("td")[3].innerText;
+      if (selectedClass === "" || selectedClass === currentClass) {
+        rows[i].style.display = "";
+      } else {
+        rows[i].style.display = "none";
+      }
+    }
+    updateSummary();
+    resetSerialNumbers();
+  }
+
+  function resetSerialNumbers() {
+    const visibleRows = document.querySelectorAll("#studenttable tbody tr:not([style*='display: none'])");
+    for (let i = 0; i < visibleRows.length; i++) {
+      visibleRows[i].getElementsByTagName("td")[0].innerText = i + 1;
+    }
+  }
+
+  document.getElementById("searchInput").addEventListener("keyup", function() {
+    const filter = this.value.toUpperCase();
+    const rows = document.getElementById("studenttable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    for (let i = 0; i < rows.length; i++) {
+      const cells = rows[i].getElementsByTagName("td");
+      let found = false;
+      for (let j = 0; j < cells.length; j++) {
+        const textValue = cells[j].textContent || cells[j].innerText;
+        if (textValue.toUpperCase().indexOf(filter) > -1) {
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+        rows[i].style.display = "";
+      } else {
+        rows[i].style.display = "none";
+      }
+    }
+    updateSummary();
+    resetSerialNumbers();
+  });
+
+  document.addEventListener("DOMContentLoaded", function() {
+    updateSummary();
+    resetSerialNumbers();
+  });
+
+  document.querySelectorAll(".clickable-row").forEach(row => {
+    row.addEventListener("click", function() {
+      window.location.href = this.getAttribute("data-href");
+    });
+  });
+
+  function syncScroll() {
+    const tableContainer = document.getElementById('table-container');
+    const scrollingBar = document.getElementById('scrolling-bar');
+    scrollingBar.scrollLeft = tableContainer.scrollLeft;
+  }
+
+  document.getElementById('table-container').addEventListener('scroll', syncScroll);
+  document.getElementById('scrolling-bar').addEventListener('scroll', function () {
+    document.getElementById('table-container').scrollLeft = this.scrollLeft;
+  });
+
+  function sortTable(columnIndex, type, order) {
+    const table = document.getElementById("studenttable");
+    const rows = Array.from(table.rows).slice(1);
+
+    rows.sort((a, b) => {
+      let cellA = a.cells[columnIndex].innerText.trim();
+      let cellB = b.cells[columnIndex].innerText.trim();
+
+      if (type === 'number') {
+        cellA = parseInt(cellA.split('/').pop(), 10);
+        cellB = parseInt(cellB.split('/').pop(), 10);
+      } else if (type === 'string' || type === 'gender') {
+        return order === 'asc' ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+      }
+
+      return order === 'asc' ? (cellA > cellB ? 1 : -1) : (cellA < cellB ? 1 : -1);
+    });
+
+    rows.forEach(row => table.appendChild(row));
+    resetSerialNumbers();
+  }
+
+  const fakeContent = document.createElement('div');
+  fakeContent.style.width = document.getElementById('table-container').scrollWidth + 'px';
+  fakeContent.style.height = '1px';
+  document.getElementById('scrolling-bar').appendChild(fakeContent);
+</script>
+<script src="{% static 'js/animations/animations.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+  AOS.init();
+</script>
+
+<style>
+  .thead-teal {
+    background-color: #008080;
+    color: white;
+  }
+
+  .clickable-row {
+    cursor: pointer;
+  }
+
+  .clickable-row:hover {
+    background-color: #f8f9fa;
+  }
+
+  .sort-arrow {
+    cursor: pointer;
+    padding-left: 5px;
+  }
+
+  .btn-teal {
+    background-color: #008080;
+    color: white;
+  }
+
+  .btn-teal:hover {
+    background-color: #006666;
+  }
+
+  #scrolling-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    overflow-x: auto;
+    background: #f1f1f1;
+    z-index: 1000;
+    border-top: 1px solid #ddd;
+  }
+
+  #scrolling-bar {
+    height: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  #scrolling-bar::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  #scrolling-bar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+  }
+
+  #scrolling-bar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+</style>
+{% endblock morejs %}

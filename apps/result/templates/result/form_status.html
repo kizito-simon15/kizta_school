@@ -1,0 +1,503 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Status</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- AOS CSS for animations -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            color: #343a40;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .center-content {
+            text-align: center;
+            margin: 20px auto;
+            padding: 30px;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            max-width: 1200px;
+        }
+
+        .form-inline .form-group {
+            margin-right: 15px;
+        }
+
+        .form-control {
+            border-radius: 50px;
+            padding: 10px 20px;
+            border: 2px solid #ced4da;
+            transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
+            outline: none;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        h1, h2, h3, h4, h5 {
+            font-weight: 700;
+            color: #343a40;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 36px;
+            color: #007bff;
+        }
+
+        h2 {
+            font-size: 30px;
+            color: #6c757d;
+        }
+
+        h3 {
+            color: #e83e8c;
+            font-size: 26px;
+        }
+
+        h4, h5 {
+            color: #343a40;
+            font-size: 24px;
+        }
+
+        .table {
+            margin-top: 20px;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            border-collapse: separate;
+            border-spacing: 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .table thead th {
+            background-color: #007bff;
+            color: white;
+            text-transform: uppercase;
+            padding: 15px;
+            letter-spacing: 0.1em;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.02);
+        }
+
+        .table tbody td {
+            padding: 20px;
+            color: #495057;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .table tbody tr:nth-child(even) {
+            background-color: #f1f1f1;
+        }
+
+        .image-container img {
+            border-radius: 50%;
+            border: 4px solid #dee2e6;
+            padding: 5px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .student-info {
+            margin-bottom: 30px;
+            padding: 30px;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .student-info h2, .student-info h3, .student-info h4, .student-info h5 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .text-primary {
+            color: #007bff;
+        }
+
+        .text-magenta {
+            color: #e83e8c;
+        }
+
+        .text-darkblue {
+            color: #343a40;
+        }
+
+        .text-warning {
+            color: #ffc107;
+        }
+
+        .text-success {
+            color: #28a745;
+        }
+
+        .text-danger {
+            color: #dc3545;
+        }
+
+        .edit-answer-btn {
+            color: #007bff;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .edit-answer-btn:hover {
+            color: #0056b3;
+        }
+
+        .print-button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 18px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 50px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .print-button:hover {
+            background-color: #5a6268;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        @media print {
+            .print-button,
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background-color: white;
+            }
+
+            .table-bordered th,
+            .table-bordered td {
+                border-width: 2px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="center-content" data-aos="fade-up" data-aos-duration="1000">
+        <div class="no-print mb-4">
+            <form id="filter-form" class="form-inline">
+                <div class="form-group mx-sm-3 mb-2">
+                    <label for="session" class="sr-only">Session</label>
+                    <select id="session" name="session" class="form-control text-primary">
+                        {% for session in sessions %}
+                            <option value="{{ session.id }}" {% if session == current_session.id %}selected{% endif %}>{{ session.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mx-sm-3 mb-2">
+                    <label for="term" class="sr-only">Term</label>
+                    <select id="term" name="term" class="form-control text-primary">
+                        {% for term in terms %}
+                            <option value="{{ term.id }}" {% if term == current_term.id %}selected{% endif %}>{{ term.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mx-sm-3 mb-2">
+                    <label for="exam" class="sr-only">Exam</label>
+                    <select id="exam" name="exam" class="form-control text-primary">
+                        {% for exam in exams %}
+                            <option value="{{ exam.id }}" {% if exam == current_exam_type.id %}selected{% endif %}>{{ exam.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+            </form>
+        </div>
+
+        <h1><u>FOM ZILIZOJAZWA KWA DARASA: {{ student_class.name }}</u></h1>
+        <br>
+
+        <form method="GET" data-aos="fade-up" data-aos-duration="1000">
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" name="q" placeholder="Search by name or registration number">
+                <button type="submit" class="btn btn-success">Search</button>
+            </div>
+        </form>
+
+        <p data-aos="fade-up" data-aos-duration="1000"><u style="color:darkgreen">UFUNGUO:</u></p>
+        <p data-aos="fade-up" data-aos-duration="1000" class="text-success">Fom zilizokamilika: &#10004;</p>
+        <p data-aos="fade-up" data-aos-duration="1000" class="text-danger">Fom ambazo hazijakamilika: &#10060;</p>
+        <p data-aos="fade-up" data-aos-duration="1000" class="text-warning">Jumla ya fom zilizokamilika: {{ completed_forms_count }}</p>
+        <br><br>
+
+        {% if no_forms %}
+        <h4 class="text-center text-danger">No result cards have been created in this session, term and exam type</h4>
+        {% else %}
+        <table class="table table-bordered" data-aos="fade-up" data-aos-duration="1000">
+            <thead>
+                <tr>
+                    <th class="text-warning">S/N</th>
+                    <th style="color: cyan;">Jina la Mwanafunzi</th>
+                    <th style="color: chartreuse;">Namba ya Usajili</th>
+                    <th style="color: chocolate;">Maendeleo ya fom</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student_info in students_with_forms %}
+                <tr>
+                    <td class="text-warning">{{ forloop.counter }}</td>
+                    <td class="text-darkblue">
+                        {{ student_info.firstname }} {{ student_info.middle_name }} {{ student_info.surname }}
+                    </td>
+                    <td class="text-darkblue">{{ student_info.registration_number }}</td>
+                    <td>
+                        {% if student_info.studentinfos_set.last %}
+                            {% if student_info.studentinfos_set.last.disprine and student_info.studentinfos_set.last.sports and student_info.studentinfos_set.last.care_of_property and student_info.studentinfos_set.last.collaborations and student_info.studentinfos_set.last.date_of_closing and student_info.studentinfos_set.last.date_of_opening and student_info.studentinfos_set.last.teacher_comments and student_info.studentinfos_set.last.head_comments %}
+                                <span class="text-success">&#10004;</span>
+                            {% else %}
+                                <span class="text-danger">&#10060;</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-danger">&#10060;</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr><br>
+
+        {% for student_result in student_results %}
+        <div class="student-info" data-aos="fade-up" data-aos-duration="1000">
+            <h1 class="text-primary"><u>ELEMENTS LAKEZONE PRE & PRIMARY SCHOOL</u></h1>
+            <div style="display: flex; align-items: center;">
+                <div class="image-container" style="margin-right: 20px;">
+                    {% if student_result.student.passport %}
+                        <img src="{{ student_result.student.passport.url }}" alt="Student Image" width="100">
+                    {% endif %}
+                </div>
+                <div>
+                    <h2 class="text-magenta"><u>TAARIFA YA MAENDELEO YA TAALUMA NA TABIA</u></h2>
+                    <h3 class="text-primary">
+                        DARASA: <u>{{ student_class.name }}</u> MHULA:
+                        <u>{{ current_term.name }}</u> MWAKA:
+                        <u>{{ current_session.name }}</u>
+                        MTIHANI:<u>{{ current_exam_type.name }}</u>
+                    </h3>
+                    <h4 class="text-primary">Jina la mwanafunzi: <u>{{ student_result.student.firstname }} {{ student_result.student.middle_name }} {{ student_result.student.surname }} </u></h4>
+                    <h5 class="text-primary">Namba ya usajili: <u>{{ student_result.student.registration_number }}</u></h5>
+                </div>
+            </div>
+            <table class="table table-bordered" data-aos="fade-up" data-aos-duration="1000">
+                <thead>
+                    <tr>
+                        <th style="color: brown;">SOMO</th>
+                        <th style="color: brown;">JARIBIO</th>
+                        <th style="color: brown;">MHULA</th>
+                        <th style="color: brown;">WASTANI</th>
+                        <th style="color: brown;">DARAJA</th>
+                        <th style="color: brown;">MAONI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in student_result.results %}
+                    <tr>
+                        <td class="text-warning">{{ result.subject }}</td>
+                        <td class="text-darkblue">{{ result.test_score }}</td>
+                        <td class="text-darkblue">{{ result.exam_score }}</td>
+                        <td class="text-darkblue">{{ result.average }}</td>
+                        <td class="text-success">{{ result.calculate_grade }}</td>
+                        <td class="text-darkgreen">{{ result.calculate_comments }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="text-center text-darkblue" data-aos="fade-up" data-aos-duration="1000">
+                JUMLA YA ALAMA ALIZOPATA <u class="text-success">{{ student_result.total_average|default:"None"|floatformat:"2" }}</u> KATI YA ALAMA
+                <u class="text-success">{{ student_result.overall_total_marks|default:"None"|floatformat:"2" }}</u> WASTANI
+                <u class="text-success">{{ student_result.overall_average|default:"None"|floatformat:"2" }}</u> DARAJA
+                <u class="text-success">{{ student_result.overall_grade }}</u> NAFASI YAKE DARASANI
+                <u class="text-success">{{ student_result.position }}</u> KATI YA WANAFUNZI
+                <u class="text-success">{{ total_active_students }}</u>
+            </p>
+            {% for student_info in students_with_forms %}
+                {% if student_info.id == student_result.student.id %}
+                    <p data-aos="fade-up" data-aos-duration="1000">
+                        <u class="text-primary">TABIA YAKE KWA UJUMLA</u>
+                    </p>
+                    <p data-aos="fade-up" data-aos-duration="1000">
+                        <span class="text-danger">A.</span>VIZURI SANA <span class="text-danger">B.</span>VIZURI <span class="text-danger">C.</span>WASTANI <span class="text-danger">D.</span>HAFIFU <span class="text-danger">F.</span>MBAYA
+                    </p>
+                    <p data-aos="fade-up" data-aos-duration="1000">
+                        Nidhamu:
+                        <u class="text-primary">{{ student_info.studentinfos_set.last.disprine }}</u>
+                        Michezo:
+                        <u class="text-primary">{{ student_info.studentinfos_set.last.sports }}</u>
+                        Kujali Mali:
+                        <u class="text-primary">{{ student_info.studentinfos_set.last.care_of_property }}</u>
+                        Ushirikiano:
+                        <u class="text-primary">{{ student_info.studentinfos_set.last.collaborations }}</u>
+                    </p>
+                    <p data-aos="fade-up" data-aos-duration="1000">
+                        Shule imefungwa tarehe:
+                        <u class="text-primary">{{ student_info.studentinfos_set.last.date_of_closing }}</u>
+                        Itafunguliwa tarehe:
+                        <u class="text-primary">{{ student_info.studentinfos_set.last.date_of_opening }}</u>
+                    </p>
+                    <p data-aos="fade-up" data-aos-duration="1000">
+                        Maoni ya mwalimu wa darasa:
+                        <u class="text-primary">{{ student_info.studentinfos_set.last.teacher_comments }}</u>
+                    </p>
+                    <p data-aos="fade-up" data-aos-duration="1000">
+                        Mwalimu mkuu:
+                        <u class="text-primary">{{ student_info.studentinfos_set.last.head_comments }}</u>
+                    </p>
+                    <p data-aos="fade-up" data-aos-duration="1000">
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 50px; margin-top: 20px;">
+                    <div style="text-align: center;">
+                     <strong>SAHIHI:</strong><br>
+                      {% if headmaster_signature %}
+                     <img src="{{ headmaster_signature.signature_image.url }}" alt="Headmaster's Signature" width="150">
+                      {% else %}
+                      <p>Signature not available</p>
+                      {% endif %}
+                     </div>
+                    <div style="text-align: center;">
+                    <strong>MHURI:</strong><br>
+                     <img src="{% static 'images/COMPANY.jpg' %}" alt="School Seal" width="150">
+                    </div>
+                    </div>
+                    </p>
+                    <br><br>
+                    <p class="text-black" data-aos="fade-up" data-aos-duration="1000">
+                        <u>MAONI YA MZAZI:</u>
+                    </p>
+                    <p data-aos="fade-up" data-aos-duration="1000" class="text-darkblue"  style="color: cornflowerblue;">
+                        {% if student_result.parent_comment %}
+                            {{ student_result.parent_comment.comment }}
+                        {% else %}
+                            Hakuna maoni kutoka kwa mzazi.
+                        {% endif %}
+                    </p>
+                    <p class="text-black" data-aos="fade-up" data-aos-duration="1000">
+                        <u>Majibu ya mtaaluma:</u>
+                    </p>
+                    {% if student_result.academic_answer %}
+                        <p data-aos="fade-up" data-aos-duration="1000" style="color: cadetblue;"><u>
+                            {{ student_result.academic_answer.answer }}
+                            <a href="#" class="edit-answer-btn text-primary" data-answer-id="{{ student_result.academic_answer.id }}">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </u></p>
+                        <form class="edit-answer-form" data-answer-id="{{ student_result.academic_answer.id }}" style="display: none;">
+                            {% csrf_token %}
+                            <textarea name="answer" rows="4" cols="30" class="form-control">{{ student_result.academic_answer.answer }}</textarea>
+                            <input type="hidden" name="session" value="{{ current_session.id }}">
+                            <input type="hidden" name="term" value="{{ current_term.id }}">
+                            <input type="hidden" name="exam" value="{{ current_exam_type.id }}">
+                            <input type="hidden" name="student_id" value="{{ student_result.student.id }}">
+                            <button type="submit" class="btn btn-primary mt-2">Save</button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{% url 'academic_form_status' class_id=student_class.id %}" class="academic-answer-form">
+                            {% csrf_token %}
+                            <textarea name="answer" rows="4" cols="30" class="form-control"></textarea>
+                            <input type="hidden" name="session" value="{{ current_session.id }}">
+                            <input type="hidden" name="term" value="{{ current_term.id }}">
+                            <input type="hidden" name="exam" value="{{ current_exam_type.id }}">
+                            <input type="hidden" name="student_id" value="{{ student_result.student.id }}">
+                            <button type="submit" class="btn btn-primary mt-2">Save</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            <hr data-aos="fade-up" data-aos-duration="1000">
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="center-content" data-aos="fade-up" data-aos-duration="1000">
+        <button class="btn btn-success print-button" onclick="printAllForms()">Print All Forms</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        AOS.init();
+
+        function printForm(studentName) {
+            window.print();
+        }
+
+        function printAllForms() {
+            window.print();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.edit-answer-btn').forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const answerId = button.getAttribute('data-answer-id');
+                    const form = document.querySelector(`.edit-answer-form[data-answer-id="${answerId}"]`);
+                    const p = button.closest('p');
+                    p.style.display = 'none';
+                    form.style.display = 'block';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+{% endblock content %}

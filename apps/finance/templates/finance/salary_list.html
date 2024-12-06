@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container" data-aos="fade-up" data-aos-duration="1000">
+    <div class="row" data-aos="fade-up" data-aos-duration="1000">
+        <div class="col-md-6" id="headSection">
+            <h1 class="mt-5">Salary Invoices</h1>
+        </div>
+        <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-8">
+                    <form method="GET" action="">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" name="q" id="searchInput" placeholder="Search by Month..." style="width: 200px;">
+                            <select class="form-control" name="month" id="monthSelect">
+                                <option value="">Select Month</option>
+                                {% for month in distinct_months %}
+                                    <option value="{{ month|date:"Y-m" }}" {% if request.GET.month == month|date:"Y-m" %}selected{% endif %}>
+                                        {{ month|date:"F Y" }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary">Search</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-4" id="buttonSection" data-aos="fade-up" data-aos-duration="1000">
+                    <a href="{% url 'salary-invoice-create' %}" class="btn btn-primary mb-3">Create New Invoice</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr data-aos="fade-up" data-aos-duration="1000">
+
+    <!-- Overall Totals Table -->
+    <div class="row" data-aos="fade-up" data-aos-duration="1000">
+        <div class="col-md-12">
+            <h2>Overall Totals</h2>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="bg-teal text-white">
+                        <tr>
+                            <th>Gross Salary</th>
+                            <th>Allowance</th>
+                            <th>Net Salary</th>
+                            <th>Given Salary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="overall_gross_salary"></td>
+                            <td id="overall_allowance"></td>
+                            <td id="overall_net_salary"></td>
+                            <td id="overall_total_given_salary"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <hr data-aos="fade-up" data-aos-duration="1000">
+
+    {% if invoices_by_month %}
+        {% for month_data in invoices_by_month %}
+            <div class="row" id="tableSection" data-aos="fade-up" data-aos-duration="1000">
+                <div class="col-md-12">
+                    <h2>Total Salary for {{ month_data.month|date:"F Y" }}</h2>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered">
+                            <thead class="bg-teal text-white">
+                                <tr>
+                                    <th>SN</th>
+                                    <th>Staff</th>
+                                    <th>Gross Salary</th>
+                                    <th>Allowance</th>
+                                    <th>Net Salary</th>
+                                    <th>Deductions</th>
+                                    <th>Taken home salary</th>
+                                    <th>Issued Date</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                {% for invoice in month_data.invoices %}
+                                    <tr onclick="window.location='{% url 'salary-invoice-detail' invoice.pk %}'">
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ invoice.staff }}</td>
+                                        <td class="gross-salary">{{ invoice.gross_salary|intcomma }}</td>
+                                        <td class="allowance">{{ invoice.allowance|intcomma }}</td>
+                                        <td class="net-salary">{{ invoice.net_salary|intcomma }}</td>
+                                        <td class="deductions">{{ invoice.deductions|intcomma }}</td>
+                                        <td class="total-given-salary">{{ invoice.total_given_salary|intcomma }}</td>
+                                        <td>{{ invoice.issued_date }}</td>
+                                        <td>{{ invoice.remarks }}</td>
+                                    </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td colspan="2"><strong>Total:</strong></td>
+                                    <td>{{ month_data.total_gross_salary|intcomma }}</td>
+                                    <td>{{ month_data.total_allowances|intcomma }}</td>
+                                    <td>{{ month_data.total_net_salary|intcomma }}</td>
+                                    <td>{{ month_data.total_deductions|intcomma }}</td>
+                                    <td>{{ month_data.total_given_salary|intcomma }}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p data-aos="fade-up" data-aos-duration="1000">No salary invoices found.</p>
+    {% endif %}
+    <button onclick="printTable()" class="btn btn-secondary" id="printButton" data-aos="fade-up" data-aos-duration="1000">Print Table</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+<script>
+    function printTable() {
+        window.print();
+    }
+
+    // Initialize AOS
+    AOS.init();
+
+    // Function to change colors at intervals
+    setInterval(changeColors, 2000); // Every 2 seconds for head section
+    setInterval(changeColors, 4000); // Every 4 seconds for table section
+    setInterval(changeColors, 6000); // Every 6 seconds for table contents
+    setInterval(changeColors, 5000); // Every 5 seconds for buttons
+
+    function changeColors() {
+        // Head Section
+        var headSection = document.getElementById('headSection');
+        headSection.style.color = getRandomColor();
+
+        // Table Section
+        var tableSection = document.getElementById('tableSection');
+        tableSection.style.color = getRandomColor();
+
+        // Table Contents
+        var tableRows = document.getElementById('tableBody').getElementsByTagName('tr');
+        for (var i = 0; i < tableRows.length; i++) {
+            tableRows[i].style.color = getRandomColor();
+        }
+
+        // Button Section
+        var buttonSection = document.getElementById('buttonSection');
+        buttonSection.style.color = getRandomColor();
+
+        // Print Button
+        var printButton = document.getElementById('printButton');
+        printButton.style.color = getRandomColor();
+    }
+
+    function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    // Calculate overall totals using JavaScript
+    document.addEventListener('DOMContentLoaded', function () {
+        let overallGrossSalary = 0;
+        let overallAllowance = 0;
+        let overallNetSalary = 0;
+        let overallTotalGivenSalary = 0;
+
+        document.querySelectorAll('.gross-salary').forEach(function (cell) {
+            overallGrossSalary += parseFloat(cell.textContent.replace(/,/g, '')) || 0;
+        });
+        document.querySelectorAll('.allowance').forEach(function (cell) {
+            overallAllowance += parseFloat(cell.textContent.replace(/,/g, '')) || 0;
+        });
+        document.querySelectorAll('.net-salary').forEach(function (cell) {
+            overallNetSalary += parseFloat(cell.textContent.replace(/,/g, '')) || 0;
+        });
+        document.querySelectorAll('.total-given-salary').forEach(function (cell) {
+            overallTotalGivenSalary += parseFloat(cell.textContent.replace(/,/g, '')) || 0;
+        });
+
+        document.getElementById('overall_gross_salary').textContent = overallGrossSalary.toLocaleString();
+        document.getElementById('overall_allowance').textContent = overallAllowance.toLocaleString();
+        document.getElementById('overall_net_salary').textContent = overallNetSalary.toLocaleString();
+        document.getElementById('overall_total_given_salary').textContent = overallTotalGivenSalary.toLocaleString();
+    });
+</script>
+{% endblock %}

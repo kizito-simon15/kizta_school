@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+
+{% block title %}
+<title>
+    {% if object %}
+        Update {{ object }}
+    {% else %}
+        Add New Staff
+    {% endif %}
+</title>
+{% endblock title %}
+
+{% block content %}
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f3e5f5;
+        margin: 0;
+        padding: 0;
+    }
+
+    .form-container {
+        max-width: 800px;
+        margin: 50px auto;
+        background: linear-gradient(135deg, #f8bbd0, #ede7f6);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-header {
+        font-size: 2.2rem;
+        color: #8e24aa;
+        margin-bottom: 30px;
+        text-align: center;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #512da8;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-group label i {
+        margin-right: 10px;
+        font-size: 1.4rem;
+        color: #6a1b9a;
+    }
+
+    input,
+    textarea,
+    select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 2px solid #d32f2f;
+        font-size: 1rem;
+        background-color: #fce4ec;
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    input[type="date"]::-webkit-inner-spin-button,
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        display: none;
+        -webkit-appearance: none;
+    }
+
+    .age-display {
+        font-size: 1rem;
+        color: #8e24aa;
+        font-weight: bold;
+        margin-top: -10px;
+        margin-bottom: 15px;
+        text-align: right;
+    }
+
+    .btn-submit {
+        background: linear-gradient(90deg, #8e24aa, #6a1b9a);
+        color: white;
+        padding: 15px 30px;
+        font-size: 1.2rem;
+        border-radius: 50px;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(142, 36, 170, 0.3);
+    }
+</style>
+
+<div class="form-container">
+    <div class="form-header">
+        {% if object %}
+            Update {{ object }}
+        {% else %}
+            Add New Staff
+        {% endif %}
+    </div>
+
+    <form action="" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Current Status -->
+        <div class="form-group">
+            <label for="current_status">
+                <i class="fas fa-user-check"></i> Current Status
+            </label>
+            <select name="current_status" id="current_status">
+                <option value="active" {% if object and object.current_status == "active" %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if object and object.current_status == "inactive" %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+
+        <!-- First Name -->
+        <div class="form-group">
+            <label for="firstname">
+                <i class="fas fa-user"></i> First Name
+            </label>
+            <input type="text" name="firstname" id="firstname" value="{{ object.firstname|default_if_none:'' }}">
+        </div>
+
+        <!-- Middle Name -->
+        <div class="form-group">
+            <label for="middle_name">
+                <i class="fas fa-user"></i> Middle Name
+            </label>
+            <input type="text" name="middle_name" id="middle_name" value="{{ object.middle_name|default_if_none:'' }}">
+        </div>
+
+        <!-- Surname -->
+        <div class="form-group">
+            <label for="surname">
+                <i class="fas fa-user-circle"></i> Surname
+            </label>
+            <input type="text" name="surname" id="surname" value="{{ object.surname|default_if_none:'' }}">
+        </div>
+
+        <!-- Gender -->
+        <div class="form-group">
+            <label for="gender">
+                <i class="fas fa-venus-mars"></i> Gender
+            </label>
+            <select name="gender" id="gender">
+                <option value="male" {% if object and object.gender == "male" %}selected{% endif %}>Male</option>
+                <option value="female" {% if object and object.gender == "female" %}selected{% endif %}>Female</option>
+            </select>
+        </div>
+
+        <!-- Date of Birth -->
+        <div class="form-group">
+            <label for="date_of_birth">
+                <i class="fas fa-calendar-alt"></i> Date of Birth
+            </label>
+            <input type="date" name="date_of_birth" id="date_of_birth" value="{{ object.date_of_birth|default_if_none:'' }}">
+            <div class="age-display" id="age-display">Age: --</div>
+        </div>
+
+        <!-- Date of Admission -->
+        <div class="form-group">
+            <label for="date_of_admission">
+                <i class="fas fa-calendar-check"></i> Date of Admission
+            </label>
+            <input type="date" name="date_of_admission" id="date_of_admission" value="{{ object.date_of_admission|default_if_none:'' }}">
+        </div>
+
+        <!-- Contract Start Date -->
+        <div class="form-group">
+            <label for="contract_start_date">
+                <i class="fas fa-play"></i> Contract Start Date
+            </label>
+            <input type="date" name="contract_start_date" id="contract_start_date" value="{{ object.contract_start_date|default_if_none:'' }}">
+        </div>
+
+        <!-- Contract Duration -->
+        <div class="form-group">
+            <label for="contract_duration">
+                <i class="fas fa-clock"></i> Contract Duration (Years)
+            </label>
+            <input type="text" name="contract_duration" id="contract_duration" value="{{ object.contract_duration|default_if_none:'' }}">
+        </div>
+
+        <!-- Contract End Date -->
+        <div class="form-group">
+            <label for="contract_end_date">
+                <i class="fas fa-stop"></i> Contract End Date
+            </label>
+            <input type="date" name="contract_end_date" id="contract_end_date" value="{{ object.contract_end_date|default_if_none:'' }}">
+        </div>
+
+        <!-- Salary -->
+        <div class="form-group">
+            <label for="salary">
+                <i class="fas fa-money-bill-alt"></i> Salary
+            </label>
+            <input type="number" step="0.01" name="salary" id="salary" value="{{ object.salary|default_if_none:'' }}">
+        </div>
+
+        <!-- Occupation -->
+        <div class="form-group">
+            <label for="occupation">
+                <i class="fas fa-briefcase"></i> Occupation
+            </label>
+            <select name="occupation" id="occupation">
+                <option value="teacher" {% if object and object.occupation == "teacher" %}selected{% endif %}>Teacher</option>
+                <option value="administrator" {% if object and object.occupation == "administrator" %}selected{% endif %}>Administrator</option>
+                <option value="support_staff" {% if object and object.occupation == "support_staff" %}selected{% endif %}>Support Staff</option>
+            </select>
+        </div>
+
+        <!-- Mobile Number -->
+        <div class="form-group">
+            <label for="mobile_number">
+                <i class="fas fa-phone"></i> Mobile Number
+            </label>
+            <input type="text" name="mobile_number" id="mobile_number" value="{{ object.mobile_number|default_if_none:'+255' }}">
+        </div>
+
+        <!-- Address -->
+        <div class="form-group">
+            <label for="address">
+                <i class="fas fa-map-marker-alt"></i> Address
+            </label>
+            <textarea name="address" id="address">{{ object.address|default_if_none:'' }}</textarea>
+        </div>
+
+        <!-- NIDA ID -->
+        <div class="form-group">
+            <label for="nida_id">
+                <i class="fas fa-id-card"></i> NIDA ID
+            </label>
+            <input type="text" name="nida_id" id="nida_id" value="{{ object.nida_id|default_if_none:'' }}">
+        </div>
+
+        <!-- TIN Number -->
+        <div class="form-group">
+            <label for="tin_number">
+                <i class="fas fa-file-invoice"></i> TIN Number
+            </label>
+            <input type="text" name="tin_number" id="tin_number" value="{{ object.tin_number|default_if_none:'' }}">
+        </div>
+
+        <!-- Guarantor -->
+        <div class="form-group">
+            <label for="guarantor">
+                <i class="fas fa-user-shield"></i> Guarantor
+            </label>
+            <input type="text" name="guarantor" id="guarantor" value="{{ object.guarantor|default_if_none:'' }}">
+        </div>
+
+        <!-- Passport Photo -->
+        <div class="form-group">
+            <label for="passport_photo">
+                <i class="fas fa-camera"></i> Passport Photo
+            </label>
+            <input type="file" name="passport_photo" id="passport_photo">
+        </div>
+
+        <!-- Additional Information -->
+        <div class="form-group">
+            <label for="others">
+                <i class="fas fa-info-circle"></i> Additional Information
+            </label>
+            <textarea name="others" id="others">{{ object.others|default_if_none:'' }}</textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-group">
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-save"></i>
+                {% if object %}
+                    Update Staff
+                {% else %}
+                    Add Staff
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const dateOfBirthInput = document.getElementById("date_of_birth");
+        const ageDisplay = document.getElementById("age-display");
+        const durationField = document.getElementById("contract_duration");
+        const startDateField = document.getElementById("contract_start_date");
+        const endDateField = document.getElementById("contract_end_date");
+
+        // Calculate age based on DOB
+        function calculateAge(dob) {
+            const today = new Date();
+            const birthDate = new Date(dob);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDifference = today.getMonth() - birthDate.getMonth();
+
+            if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        dateOfBirthInput.addEventListener("input", function () {
+            const dob = dateOfBirthInput.value;
+            if (dob) {
+                const age = calculateAge(dob);
+                ageDisplay.textContent = `Age: ${age}`;
+            } else {
+                ageDisplay.textContent = "Age: --";
+            }
+        });
+
+        // Calculate contract end date based on duration
+        durationField.addEventListener("input", function () {
+            let duration = parseInt(durationField.value);
+            if (!isNaN(duration) && startDateField.value) {
+                let startDate = new Date(startDateField.value);
+                let endDate = new Date(startDate.setFullYear(startDate.getFullYear() + duration));
+                endDateField.value = endDate.toISOString().split("T")[0]; // Format as yyyy-mm-dd
+            }
+        });
+    });
+</script>
+{% endblock content %}

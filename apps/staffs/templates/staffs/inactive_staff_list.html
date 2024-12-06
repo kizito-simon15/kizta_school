@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Inactive Staff{% endblock title %}
+
+{% block breadcrumb %}
+<a class="btn btn-primary" href="{% url 'staff-create' %}"><i class="fas fa-plus"></i> New staff</a>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="container" data-aos="fade-up" data-aos-duration="1000">
+  <!-- Select dropdown for occupations -->
+  <div class="form-group">
+    <label for="occupationSelect" style="color: teal;">Select Occupation:</label>
+    <select id="occupationSelect" class="form-control" style="background-color:teal; color: white">
+      <option value="">All</option>
+      <option value="teacher">Teacher</option>
+      <option value="administrator">Administrator</option>
+      <option value="support_staff">Support Staff</option>
+    </select>
+  </div>
+
+  <!-- Filter button -->
+  <button onclick="filterStaff()" class="btn btn-primary">Filter</button>
+
+  <!-- Search field -->
+  <div class="form-group">
+    <input type="text" id="searchInput" class="form-control" placeholder="Search...">
+  </div>
+
+  <!-- Summary table for total male, female, and all staff -->
+  <table class="table table-bordered">
+    <thead class="thead-teal">
+      <tr>
+        <th scope="col">Total Male Staff</th>
+        <th scope="col">Total Female Staff</th>
+        <th scope="col">Total Staff</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td id="maleCount">0</td>
+        <td id="femaleCount">0</td>
+        <td id="totalCount">0</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<table id="stafftable" class="table table-bordered table-hover">
+  <thead class="table-success">
+    <tr>
+      <th>S/N</th>
+      <th>Fullname</th>
+      <th>Gender</th>
+      <th>Mobile Phone Number</th>
+      <th>Occupation</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for staff in staff_list %}
+      <tr class='clickable-row' data-href="{% url 'staff-detail' staff.id %}">
+        <td>{{ forloop.counter }}</td>
+        <td>{{ staff.firstname }} {{ staff.middle_name }} {{ staff.surname }}</td>
+        <td>{{ staff.get_gender_display }}</td>
+        <td>{{ staff.mobile_number }}</td>
+        <td>{{ staff.occupation }}</td>
+        <td>
+          {% if staff.current_status == "active" %}
+            <i class="fas fa-check" style="color: green;"></i>
+          {% else %}
+            <i class="fas fa-times" style="color: red;"></i>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock content %}
+
+{% block morejs %}
+<script>
+  // Function to update the summary table
+  function updateSummary() {
+    const rows = document.getElementById("stafftable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    let maleCount = 0;
+    let femaleCount = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].style.display !== "none") {
+        const gender = rows[i].getElementsByTagName("td")[2].innerText.toLowerCase();
+        if (gender === "male") {
+          maleCount++;
+        } else if (gender === "female") {
+          femaleCount++;
+        }
+      }
+    }
+
+    document.getElementById("maleCount").innerText = maleCount;
+    document.getElementById("femaleCount").innerText = femaleCount;
+    document.getElementById("totalCount").innerText = maleCount + femaleCount;
+  }
+
+  // Function to filter staff based on selected occupation
+  function filterStaff() {
+    const selectedOccupation = document.getElementById("occupationSelect").value;
+    const rows = document.getElementById("stafftable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    for (let i = 0; i < rows.length; i++) {
+      const occupation = rows[i].getElementsByTagName("td")[4].innerText.toLowerCase();
+      if (selectedOccupation === "" || selectedOccupation === occupation) {
+        rows[i].style.display = "";
+      } else {
+        rows[i].style.display = "none";
+      }
+    }
+    updateSummary();
+    resetSerialNumbers();
+  }
+
+  // Function to reset serial numbers after filtering
+  function resetSerialNumbers() {
+    const visibleRows = document.querySelectorAll("#stafftable tbody tr:not([style*='display: none'])");
+    for (let i = 0; i < visibleRows.length; i++) {
+      visibleRows[i].getElementsByTagName("td")[0].innerText = i + 1;
+    }
+  }
+
+  // Function to filter staff based on search input
+  document.getElementById("searchInput").addEventListener("keyup", function() {
+    const filter = this.value.toUpperCase();
+    const rows = document.getElementById("stafftable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    for (let i = 0; i < rows.length; i++) {
+      const cells = rows[i].getElementsByTagName("td");
+      let found = false;
+      for (let j = 0; j < cells.length; j++) {
+        const textValue = cells[j].textContent || cells[j].innerText;
+        if (textValue.toUpperCase().indexOf(filter) > -1) {
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+        rows[i].style.display = "";
+      } else {
+        rows[i].style.display = "none";
+      }
+    }
+    updateSummary();
+    resetSerialNumbers();
+  });
+
+  // Initial update of the summary table and serial numbers on page load
+  document.addEventListener("DOMContentLoaded", function() {
+    updateSummary();
+    resetSerialNumbers();
+  });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+    integrity="sha384-NkU32VZyLgnbxVuSw/5CCg9zp4xA0mxZiuDAi9g4SM/LuIbr99HyrCP4KiLlXg+T"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"
+    integrity="sha384-5T5l20F6jpxmo3SiRUt7KA6uP6q/eFN6wxrbykcIcSVuW0eECCqxWOjNnlpmDYBp"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+  // Initialize AOS
+  AOS.init();
+</script>
+{% endblock morejs %}

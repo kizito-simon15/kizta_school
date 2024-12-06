@@ -1,0 +1,122 @@
+{% extends "parents/parent_base.html" %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initiate Payment</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .payment-form {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .payment-form h2 {
+            margin-bottom: 20px;
+            color: #343a40;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .form-control:disabled {
+            background-color: #e9ecef;
+        }
+        #invoice-fields, #uniform-fields {
+            margin-top: 20px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="payment-form">
+        <h2>Initiate Payment</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.student_name.label_tag }}
+                {{ form.student_name }}
+            </div>
+
+            <div class="form-group">
+                {{ form.payment_type.label_tag }}
+                {{ form.payment_type }}
+            </div>
+
+            <div id="invoice-fields" style="display: none;">
+                <div class="form-group">
+                    {{ form.invoice.label_tag }}
+                    {{ form.invoice }}
+                </div>
+            </div>
+
+            <div id="uniform-fields" style="display: none;">
+                <div class="form-group">
+                    {{ form.uniform_type.label_tag }}
+                    {{ form.uniform_type }}
+                </div>
+                <div class="form-group">
+                    {{ form.quantity.label_tag }}
+                    {{ form.quantity }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                {{ form.phone_number.label_tag }}
+                {{ form.phone_number }}
+            </div>
+
+            <div class="form-group">
+                {{ form.amount.label_tag }}
+                {{ form.amount }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Pay Now</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        var paymentTypeField = document.querySelector('select[name="payment_type"]');
+        var invoiceFields = document.getElementById('invoice-fields');
+        var uniformFields = document.getElementById('uniform-fields');
+
+        function toggleFields() {
+            if (paymentTypeField.value === 'invoice') {
+                invoiceFields.style.display = 'block';
+                uniformFields.style.display = 'none';
+            } else if (paymentTypeField.value === 'uniform') {
+                invoiceFields.style.display = 'none';
+                uniformFields.style.display = 'block';
+            }
+        }
+
+        paymentTypeField.addEventListener('change', toggleFields);
+        toggleFields(); // Initial call to set up the correct fields
+    });
+</script>
+
+</body>
+</html>
+{% endblock %}

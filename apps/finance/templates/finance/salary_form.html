@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}
+    {% if form.instance.pk %}Edit{% else %}Create{% endif %} Salary Invoice
+{% endblock title %}
+
+{% block content %}
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom CSS */
+        .container {
+            color: dodgerblue;
+        }
+        .add-invoice-title {
+            color: white;
+            background-color: teal;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .form-group label {
+            color: blue;
+        }
+        .form-control {
+            border: 1px solid lightblue;
+        }
+        .form-control:focus {
+            border-color: lightblue;
+            box-shadow: 0 0 0 0.2rem rgba(173, 216, 230, 0.5);
+        }
+        .btn-primary {
+            background-color: teal;
+            border-color: teal;
+        }
+        .btn-primary:hover {
+            background-color: lightblue;
+            border-color: lightblue;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+        input[type="date"] {
+            color: lightred;
+        }
+    </style>
+
+    <div class="container">
+        <h1 class="mt-5 add-invoice-title">{% if form.instance.pk %}Edit{% else %}Create{% endif %} Salary Invoice</h1>
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="staff-search">Search Staff:</label>
+                <input type="text" id="staff-search" class="form-control" placeholder="Enter staff name">
+            </div>
+            <div class="form-group">
+                <label for="id_staff">Staff:</label>
+                <select id="id_staff" name="staff" class="form-control">
+                    {% for staff in staff_list %}
+                        <option value="{{ staff.id }}" data-salary="{{ staff.salary }}" {% if staff.id == form.instance.staff.id %}selected{% endif %}>{{ staff }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="id_month">Month:</label>
+                <input type="date" id="id_month" name="month" class="form-control" value="{{ form.instance.month|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group">
+                <label for="id_gross_salary">Gross Salary:</label>
+                <input type="number" id="id_gross_salary" name="gross_salary" class="form-control" value="{{ form.instance.gross_salary }}">
+            </div>
+            <div class="form-group">
+                <label for="id_allowance">Allowance:</label>
+                <input type="number" id="id_allowance" name="allowance" class="form-control" value="{{ form.instance.allowance }}">
+            </div>
+            <div class="form-group">
+                <label>Net Salary:</label>
+                <p id="net_salary" class="form-control-static">{{ form.instance.net_salary }}</p>
+            </div>
+            <div class="form-group">
+                <label for="id_deductions">Deductions:</label>
+                <input type="number" id="id_deductions" name="deductions" class="form-control" value="{{ form.instance.deductions }}">
+            </div>
+            <div class="form-group">
+                <label>Total Given Salary:</label>
+                <p id="total_given_salary" class="form-control-static"></p>
+            </div>
+            <div class="form-group">
+                <label for="id_issued_date">Issued Date:</label>
+                <input type="date" id="id_issued_date" name="issued_date" class="form-control" value="{{ form.instance.issued_date|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group">
+                <label for="id_remarks">Remarks:</label>
+                <textarea id="id_remarks" name="remarks" class="form-control">{{ form.instance.remarks }}</textarea>
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('id_month').readOnly = false; document.getElementById('id_issued_date').readOnly = false;">Edit Month and Issued Date</button>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="{% url 'salary-invoice-list' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Logic for filtering staff
+            const staffSearch = document.getElementById('staff-search');
+            const staffSelect = document.getElementById('id_staff');
+
+            staffSearch.addEventListener('input', function () {
+                const filter = staffSearch.value.toLowerCase();
+                Array.from(staffSelect.options).forEach(function (option) {
+                    const text = option.text.toLowerCase();
+                    option.style.display = text.includes(filter) ? 'block' : 'none';
+                });
+            });
+
+            // Logic for calculating net salary and total given salary
+            const grossSalaryInput = document.getElementById('id_gross_salary');
+            const allowanceInput = document.getElementById('id_allowance');
+            const deductionsInput = document.getElementById('id_deductions');
+            const netSalaryDisplay = document.getElementById('net_salary');
+            const totalGivenSalaryDisplay = document.getElementById('total_given_salary');
+
+            function calculateNetSalary() {
+                const grossSalary = parseFloat(grossSalaryInput.value) || 0;
+                const allowance = parseFloat(allowanceInput.value) || 0;
+                const netSalary = grossSalary + allowance;
+                netSalaryDisplay.textContent = netSalary.toFixed(2);
+                return netSalary;
+            }
+
+            function calculateTotalGivenSalary() {
+                const netSalary = calculateNetSalary();
+                const deductions = parseFloat(deductionsInput.value) || 0;
+                const totalGivenSalary = netSalary - deductions;
+                totalGivenSalaryDisplay.textContent = totalGivenSalary.toFixed(2);
+            }
+
+            grossSalaryInput.addEventListener('input', calculateTotalGivenSalary);
+            allowanceInput.addEventListener('input', calculateTotalGivenSalary);
+            deductionsInput.addEventListener('input', calculateTotalGivenSalary);
+
+            // Initial calculation
+            calculateTotalGivenSalary();
+
+            // Logic to set gross salary based on selected staff
+            staffSelect.addEventListener('change', function () {
+                const selectedOption = staffSelect.options[staffSelect.selectedIndex];
+                const salary = parseFloat(selectedOption.getAttribute('data-salary')) || 0;
+                grossSalaryInput.value = salary.toFixed(2);
+                calculateTotalGivenSalary();
+            });
+
+            // Set initial gross salary if staff is already selected
+            if (staffSelect.value) {
+                const selectedOption = staffSelect.options[staffSelect.selectedIndex];
+                const salary = parseFloat(selectedOption.getAttribute('data-salary')) || 0;
+                grossSalaryInput.value = salary.toFixed(2);
+                calculateTotalGivenSalary();
+            }
+        });
+    </script>
+{% endblock %}
