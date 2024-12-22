@@ -1,244 +1,242 @@
 {% extends "base.html" %}
-{% load static %}
-{% load humanize %}
+{% load widget_tweaks humanize static %}
+
+{% block title %}
+Add Payment
+{% endblock title %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Receipt</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            animation: fadeIn 1s ease-in-out;
-        }
-        .receipt-container {
-            width: 800px;
-            margin: 20px auto;
-            border: 2px solid #ddd;
-            padding: 20px;
-            border-radius: 10px;
-            background-color: #fff;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            animation: bounceIn 1s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-        @keyframes bounceIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.3);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.05);
-            }
-            70% {
-                transform: scale(0.9);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-        .receipt-header {
-            background-color: #ff9800;
-            color: #fff;
-            padding: 10px;
-            border-radius: 10px 10px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            animation: slideInLeft 1s ease-in-out;
-        }
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-100px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        .receipt-header img {
-            height: 100px;
-        }
-        .receipt-header h2 {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 0;
-        }
-        .receipt-header p {
-            margin: 0;
-            font-size: 14px;
-        }
-        .receipt-body {
-            margin-bottom: 20px;
-            padding-top: 20px;
-            animation: fadeIn 1s ease-in-out;
-        }
-        .receipt-body h4 {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        .receipt-body p {
-            margin: 5px 0;
-            font-size: 16px;
-            color: #555;
-        }
-        .table-bordered {
-            border: 2px solid #ddd;
-            animation: fadeIn 1s ease-in-out;
-        }
-        .table-bordered td, .table-bordered th {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-        .table thead {
-            background-color: #ff9800;
-            color: #fff;
-        }
-        .table {
-            margin-bottom: 0;
-        }
-        .receipt-footer {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 2px solid #ffc107;
-            padding-top: 10px;
-            animation: slideInRight 1s ease-in-out;
-        }
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(100px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        .receipt-footer p {
-            margin: 0;
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-        }
-        .signature {
-            text-align: center;
-            padding-top: 10px;
-        }
-        .no-print {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            animation: fadeIn 1s ease-in-out;
-        }
-        @media print {
-            .no-print {
-                display: none;
-            }
-            .receipt-header {
-                background-color: #ff9800 !important;
-                -webkit-print-color-adjust: exact;
-            }
-            .table thead {
-                background-color: #ff9800 !important;
-                -webkit-print-color-adjust: exact;
-            }
-            .receipt-footer {
-                border-top: 2px solid #ffc107 !important;
-                -webkit-print-color-adjust: exact;
-            }
-        }
-        .btn-primary, .btn-secondary {
-            animation: fadeIn 1s ease-in-out;
-        }
-        .btn-primary {
-            background-color: #ff9800;
-            border-color: #ff9800;
-        }
-        .btn-secondary {
-            background-color: #ffc107;
-            border-color: #ffc107;
-        }
-        .btn-primary:hover, .btn-secondary:hover {
-            opacity: 0.8;
-        }
-    </style>
-</head>
-<body>
-    <div class="no-print">
-        <button class="btn btn-primary" onclick="window.print()">Print</button>
-        <button class="btn btn-secondary" onclick="window.history.back()">Back</button>
-    </div>
-    <div class="receipt-container animate__animated animate__fadeIn">
-        <div class="receipt-header">
-            <img src="{% static 'images/lake.png' %}" alt="Logo">
-            <div>
-                <h2>ELEMENTS LAKEZONE PRE & PRIMARY SCHOOL</h2>
-                <p>Together for Excellence</p>
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: #f9f9fa;
+        margin:0;
+        padding:20px;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    .col-md-7 {
+        width: 58.3333%;
+        float: left;
+        box-sizing: border-box;
+        padding: 0 10px;
+    }
+
+    .col-md-5 {
+        width: 41.6667%;
+        float: left;
+        box-sizing: border-box;
+        padding: 0 10px;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.3rem;
+        font-size: 0.95rem;
+        color: #333;
+    }
+
+    .form-control {
+        border-radius: 30px;
+        border: 1px solid #ccc;
+        font-size: 0.9rem;
+        color: #333;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        transition: box-shadow 0.3s, border-color 0.3s;
+    }
+
+    .form-control:focus {
+        border-color: #e67e22;
+        box-shadow: 0 0 0 0.2rem rgba(230,126,34,.2);
+    }
+
+    .btn {
+        border-radius: 20px;
+        font-weight: 600;
+        border: none;
+        transition: background 0.3s, transform 0.3s;
+        padding: 8px 14px;
+        font-size: 0.9rem;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #e67e22, #d46b11);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #cf650f, #b8550c);
+        transform: translateY(-2px);
+    }
+
+    .payment-form-container {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        padding: 20px;
+        animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity:0; }
+        to { opacity:1; }
+    }
+
+    .invoice-summary-card {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-top: 20px;
+        animation: fadeIn 1s ease-in-out;
+    }
+
+    .invoice-summary-header {
+        background: linear-gradient(135deg, #20c997, #10866a);
+        color: #fff;
+        padding: 15px;
+        border-radius: 15px 15px 0 0;
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .invoice-summary-body {
+        padding: 15px;
+    }
+
+    .invoice-summary-body ul {
+        list-style: none;
+        padding:0;
+        margin:0;
+        font-size:0.9rem;
+    }
+
+    .invoice-summary-body li {
+        margin: 5px 0;
+        color: #333;
+    }
+
+    .invoice-summary-body li::before {
+        content: "• ";
+        color: #20c997;
+    }
+
+    .form-text {
+        font-size:0.8rem;
+        color:#666;
+    }
+
+    /* Icons and Emojis */
+    .emoji-label {
+        font-size: 1.1rem;
+        vertical-align: middle;
+    }
+
+    .field-icon {
+        color:#e67e22;
+    }
+</style>
+
+<div class="container" data-aos="fade-up">
+    <div class="row">
+        <div class="col-md-7">
+            <div class="payment-form-container">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label class="form-label">
+                            💲 Amount paid <i class="fas fa-money-bill-wave field-icon"></i>
+                        </label>
+                        {{ form.amount_paid|add_class:"form-control" }}
+                        <small class="form-text">Enter the amount received from the parent/student.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            📅 Date paid <i class="fas fa-calendar-alt field-icon"></i>
+                        </label>
+                        {{ form.date_paid|add_class:"form-control" }}
+                        <small class="form-text">Use YYYY-MM-DD format or pick from calendar if available.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            💬 Comment <i class="fas fa-comment-dots field-icon"></i>
+                        </label>
+                        {{ form.comment|add_class:"form-control" }}
+                        <small class="form-text">Optional: Add any notes related to this payment.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            💳 Payment method <i class="fas fa-credit-card field-icon"></i>
+                        </label>
+                        {{ form.payment_method|add_class:"form-control" }}
+                        <small class="form-text">Select how the payment was made (e.g. Cash, MPesa, Bank).</small>
+                    </div>
+
+                    <div class="text-end" style="margin-top:20px;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add payment
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-        <div class="receipt-body">
-            <h4>Receipt</h4>
-            <p>Date: {{ current_date|date:"Y-m-d H:i:s" }}</p>
-            <p>Received with thanks from: A PARENT</p>
-            <p>Student Name: {{ invoice.student.firstname }} {{ invoice.student.middle_name }} {{ invoice.student.surname }}</p>
-            <p>Class: {{ invoice.class_for }}</p>
-            <p>Session: {{ invoice.session }}</p>
-            <p>Installment: {{ invoice.installment }}</p>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Total Amount Payable</td>
-                        <td>{{ invoice.total_amount_payable|intcomma }}</td>
-                    </tr>
-                    <tr>
-                        <td>Total Amount Paid</td>
-                        <td>{{ invoice.total_amount_paid|intcomma }}</td>
-                    </tr>
-                    <tr>
-                        <td>Balance</td>
-                        <td>{{ invoice.balance|intcomma }}</td>
-                    </tr>
-                    <tr>
-                        <td>Payment Method</td>
-                        <td>{{ latest_receipt.payment_method }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="receipt-footer">
-            <p>Received by: Elements Lakezone School</p>
-            <div class="signature">
-                Authorized Signature
-                <br>
-                <img src="{% static 'images/Screenshot from 2024-07-15 01-17-06.png' %}" alt="Signature" height="50">
+
+        <div class="col-md-5">
+            <div class="invoice-summary-card">
+                <div class="invoice-summary-header">
+                    <i class="fas fa-file-invoice-dollar"></i> INVOICE
+                </div>
+                <div class="invoice-summary-body">
+                    <h5>{{ invoice.student.firstname }} {{ invoice.student.surname }} ({{ invoice.student.unique_id }})</h5>
+                    <ul>
+                        <li>Session: {{ invoice.session }}</li>
+                        <li>Installment: {{ invoice.installment }}</li>
+                        <li>Class: {{ invoice.class_for }}</li>
+                        <li>Total Amount Payable: {{ invoice.total_amount_payable|intcomma }}</li>
+                        <li>Total Amount Paid: {{ invoice.total_amount_paid|intcomma }}</li>
+                        <li>Balance: {{ invoice.balance|intcomma }}</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
-</body>
-</html>
-{% endblock %}
+</div>
+{% endblock content %}
+
+{% block morejs %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  AOS.init({
+    duration: 1000,
+    once: true,
+  });
+</script>
+{% endblock morejs %}

@@ -1,457 +1,358 @@
-import matplotlib.pyplot as plt
-import pandas as pd
-from io import BytesIO
 import base64
-from apps.result.models import Result
-from apps.corecode.models import AcademicSession, AcademicTerm, ExamType, StudentClass
+import io
+import logging
+from datetime import datetime
+from decimal import Decimal
+from io import BytesIO
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-def generate_advice_and_comments(overall_average):
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from django.db.models import Sum, QuerySet
+from sklearn.cluster import KMeans
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+
+from apps.corecode.models import AcademicSession, AcademicTerm, ExamType, StudentClass, Subject
+from apps.finance.models import Invoice, Receipt, SalaryInvoice, StudentUniform
+from apps.result.models import Result
+from apps.staffs.models import Staff
+from apps.students.models import Student
+from expenditures.models import Expenditure, ExpenditureInvoice
+from parents.models import ParentComments, StudentComments
+
+logger = logging.getLogger(__name__)
+
+############################################
+# Helper Functions
+############################################
+
+def _figure_to_base64(fig: plt.Figure) -> str:
+    """Convert a Matplotlib figure to a base64-encoded string."""
+    with BytesIO() as buffer:
+        fig.savefig(buffer, format='png')
+        buffer.seek(0)
+        return base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+
+def use_advanced_model_if_possible(
+    x: np.ndarray, 
+    y: np.ndarray
+) -> Tuple[Union[RandomForestRegressor, LinearRegression], str]:
     """
-    Generate descriptive and flexible comments and advice based on the overall average.
+    Use a RandomForestRegressor if we have sufficient data points; otherwise, fall back to LinearRegression.
     """
-    if overall_average < 5:
-        return (
-            "The overall average for this class is critically low. This indicates a severe issue with the learning "
-            "process. Immediate action is required. Suggestions include:\n"
-            "- Introducing remedial classes to revisit fundamental concepts.\n"
-            "- Conducting regular assessments to identify areas where students are struggling.\n"
-            "- Increasing engagement with parents to provide support at home.\n"
-            "- Encouraging teachers to adopt interactive and student-friendly teaching methods.\n"
-            "Addressing these issues quickly can help to set the class on the right path to improvement."
+    if len(x) > 5:
+        model = RandomForestRegressor(n_estimators=50, random_state=42)
+        model.fit(x, y.ravel())
+        model_type = "RandomForestRegressor"
+    else:
+        model = LinearRegression()
+        model.fit(x, y)
+        model_type = "LinearRegression"
+    return model, model_type
+
+
+def generate_comments_and_advice(
+    over_and_over_average: float,
+    latest_average: float,
+    strongest: List[str],
+    medium: List[str],
+    weakest: List[str]
+) -> str:
+    """
+    Generate comments and advice based on performance averages and subject strengths/weaknesses.
+    Note: over_and_over_average and latest_average are on a 50-point scale.
+    """
+    advice = []
+
+    # Overall performance commentary based on a scale out of 50
+    if over_and_over_average < 10:
+        advice.append(
+            f"Overall performance is significantly below expectations (Avg: {over_and_over_average:.2f}/50). "
+            "A comprehensive support plan is required, including remedial classes and closer monitoring."
         )
-    elif overall_average < 15:
-        return (
-            "This performance is below average and reflects gaps in understanding or consistency in learning. To improve:\n"
-            "- Focus on creating small, manageable study groups for peer-to-peer learning.\n"
-            "- Ensure that teachers provide detailed feedback on assignments and tests.\n"
-            "- Utilize creative teaching aids like videos, charts, and real-life examples to simplify concepts.\n"
-            "- Motivate students by setting achievable goals and rewarding progress.\n"
-            "With consistent effort, the class can begin to show significant improvement."
+    elif over_and_over_average < 25:
+        advice.append(
+            f"Performance is below average (Avg: {over_and_over_average:.2f}/50). "
+            "Implement structured revision plans, additional exercises, and periodic assessments."
         )
-    elif overall_average < 25:
-        return (
-            "The performance is still low, though progress might be visible. At this stage, the class needs to:\n"
-            "- Maintain steady effort and focus on bridging knowledge gaps.\n"
-            "- Ensure teachers conduct more regular quizzes and provide personalized feedback.\n"
-            "- Implement a reward system to encourage better performance among students.\n"
-            "- Engage with parents to provide a supportive learning environment at home.\n"
-            "With continued focus and consistent study habits, this class has the potential to improve further."
+    elif over_and_over_average < 40:
+        advice.append(
+            f"Performance is around average (Avg: {over_and_over_average:.2f}/50). "
+            "Consistency is key. Encourage more practice and use formative assessments to identify gaps."
         )
-    elif overall_average < 35:
-        return (
-            "The class is performing at an average level. While this is a stable position, there is room for improvement:\n"
-            "- Encourage students to take more initiative in their studies, such as self-study or extra reading.\n"
-            "- Continue with regular tests and feedback sessions to track progress.\n"
-            "- Motivate the class with activities like academic competitions or debates.\n"
-            "- Ensure that all students participate actively in lessons.\n"
-            "This level is good, but with some additional effort, the class can achieve excellence."
-        )
-    elif overall_average < 45:
-        return (
-            "This is a commendable performance, showing that the class is nearing excellence. Suggestions to maintain and improve:\n"
-            "- Regularly revise and test knowledge to ensure retention and understanding.\n"
-            "- Introduce advanced concepts to challenge and engage students further.\n"
-            "- Foster collaboration between students for shared learning experiences.\n"
-            "- Encourage teachers to continue their effective methods and provide ongoing support.\n"
-            "The class is on the right track, and with sustained effort, it can achieve the highest marks."
-        )
-    elif overall_average < 50:
-        return (
-            "Congratulations on achieving high marks! This is an excellent performance. To maintain this level:\n"
-            "- Ensure that students remain motivated and enthusiastic about learning.\n"
-            "- Introduce enrichment programs like STEM projects or advanced workshops.\n"
-            "- Celebrate successes to keep morale high among students and teachers.\n"
-            "- Encourage students to mentor peers in other classes, which will reinforce their own learning.\n"
-            "Keep up the great work, and continue striving for perfection."
+    elif over_and_over_average < 50:
+        advice.append(
+            f"Good performance (Avg: {over_and_over_average:.2f}/50). "
+            "Consider more challenging tasks to push towards excellence and maintain steady growth."
         )
     else:
-        return (
-            "Outstanding performance! The class has achieved the highest possible marks. To maintain this excellence:\n"
-            "- Continue with the strategies that have proven successful so far.\n"
-            "- Encourage students to explore new areas of learning beyond the curriculum.\n"
-            "- Introduce leadership opportunities for students to inspire others.\n"
-            "- Provide advanced-level material and activities to keep the momentum going.\n"
-            "Maintaining this level is challenging, but with dedication, the class can consistently perform at the top level."
+        # If it ever hits 50, that's a perfect score scenario
+        advice.append(
+            f"Excellent performance (Avg: {over_and_over_average:.2f}/50). "
+            "Continue to provide enrichment activities and encourage peer mentoring to sustain top-level results."
         )
 
+    # Subject-level feedback
+    if strongest:
+        advice.append(f"Strongest subjects: {', '.join(strongest)}. Leverage these strengths for confidence building.")
+    if medium:
+        advice.append(f"Moderate subjects: {', '.join(medium)}. Targeted practice can elevate these to strengths.")
+    if weakest:
+        advice.append(f"Weakest subjects: {', '.join(weakest)}. Allocate additional support or tutoring sessions.")
 
-def draw_class_performance_trends():
+    return " ".join(advice)
+
+
+############################################
+# Clustering Subjects by Performance
+############################################
+
+def cluster_subjects_by_performance() -> Tuple[Optional[str], Dict[str, int], Optional[str]]:
     """
-    Draws graphs showing the trends of overall averages for all classes across session terms and exam types.
-    Each class gets a separate graph and accompanying insights.
-    Returns a dictionary with the class name as key and a dictionary of graph and insights as value.
+    Use K-Means clustering to group subjects by their average performance (out of 50).
+    Returns a base64 chart, a subject-to-cluster map, and an error message if any.
+    """
+    results = Result.objects.all()
+    if not results.exists():
+        return None, {}, "No results data for clustering."
+
+    subject_ids = results.values_list('subject', flat=True).distinct()
+    subjects = Subject.objects.filter(pk__in=subject_ids)
+    subject_averages = []
+
+    for subj in subjects:
+        subj_results = results.filter(subject=subj).exclude(average__isnull=True)
+        if subj_results.exists():
+            # Use float(...) to ensure numeric type consistency
+            avg_score = float(subj_results.aggregate(avg=Sum('average'))['avg'] / subj_results.count())
+            subject_averages.append((subj.name, avg_score))
+
+    if len(subject_averages) < 3:
+        return None, {}, "Not enough subjects to form clusters."
+
+    df = pd.DataFrame(subject_averages, columns=['Subject', 'AverageScore'])
+    X = df[['AverageScore']].values
+
+    kmeans = KMeans(n_clusters=3, random_state=42)
+    kmeans.fit(X)
+    df['Cluster'] = kmeans.labels_
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    sns.scatterplot(x=df['AverageScore'], y=[0]*len(df), hue=df['Cluster'], palette='viridis', s=100, legend=True, ax=ax)
+    for _, row in df.iterrows():
+        ax.text(row['AverageScore'], 0.02, row['Subject'], rotation=45, ha='center', va='bottom', fontsize=9)
+
+    ax.set_title("Subject Clusters by Average Performance (Out of 50)", fontsize=14, fontweight='bold')
+    ax.set_xlabel("Average Score (0-50)")
+    ax.set_yticks([])
+
+    cluster_chart = _figure_to_base64(fig)
+    plt.close(fig)
+
+    cluster_labels = dict(zip(df['Subject'], df['Cluster']))
+    return cluster_chart, cluster_labels, None
+
+
+############################################
+# Class Performance Trends
+############################################
+
+def draw_class_performance_trends() -> Dict[str, Dict[str, Any]]:
+    """
+    Draw class performance trends over sessions, terms, and exams.
+    All averages considered are out of 50.
     """
     classes = StudentClass.objects.all()
-    class_insights = {}
+    sessions = AcademicSession.objects.all()
+    terms = AcademicTerm.objects.all()
+    exams = ExamType.objects.all()
+
+    class_insights: Dict[str, Dict[str, Any]] = {}
 
     for student_class in classes:
-        # Query results for the given class
-        results = Result.objects.filter(current_class=student_class)
-
-        # Prepare data for the graph
+        results = Result.objects.filter(current_class=student_class).exclude(average__isnull=True)
         data = []
-        for session in AcademicSession.objects.all():
-            for term in AcademicTerm.objects.all():
-                for exam in ExamType.objects.all():
-                    # Filter results for the given session, term, and exam type
+        for session in sessions:
+            for term in terms:
+                for exam in exams:
                     class_results = results.filter(session=session, term=term, exam=exam)
+                    if not class_results.exists():
+                        continue
+                    student_overall_averages = []
+                    distinct_students = class_results.values_list('student', flat=True).distinct()
+                    for student_id in distinct_students:
+                        student_res = class_results.filter(student_id=student_id)
+                        if student_res.exists():
+                            avg_per_student = float(student_res.aggregate(a=Sum('average'))['a'] / student_res.count())
+                            student_overall_averages.append(avg_per_student)
 
-                    if class_results.exists():
-                        # Calculate overall average for each student in the class
-                        student_overall_averages = []
-                        for student_id in class_results.values_list('student', flat=True).distinct():
-                            # Get all subjects for the student in this session-term-exam
-                            student_results = class_results.filter(student_id=student_id)
+                    if student_overall_averages:
+                        class_overall_avg = sum(student_overall_averages) / len(student_overall_averages)
+                        data.append({
+                            'Session': session.name,
+                            'Term': term.name,
+                            'Exam': exam.name,
+                            'Overall Average': class_overall_avg
+                        })
 
-                            if student_results.exists():
-                                # Calculate average per subject
-                                subject_averages = []
-                                for res in student_results:
-                                    if res.test_score is not None and res.exam_score is not None:
-                                        subject_average = (res.test_score + res.exam_score) / 2
-                                    elif res.test_score is not None:
-                                        subject_average = res.test_score
-                                    elif res.exam_score is not None:
-                                        subject_average = res.exam_score
-                                    else:
-                                        subject_average = 0
-                                    subject_averages.append(subject_average)
-
-                                # Calculate overall average per student
-                                if subject_averages:
-                                    overall_average_per_student = sum(subject_averages) / len(subject_averages)
-                                    student_overall_averages.append(overall_average_per_student)
-
-                        # Calculate the overall average for the class in this session, term, and exam
-                        if student_overall_averages:
-                            class_overall_average = sum(student_overall_averages) / len(student_overall_averages)
-                            data.append({
-                                'Session': session.name,
-                                'Term': term.name,
-                                'Exam': exam.name,
-                                'Overall Average': class_overall_average
-                            })
-
-        # Convert data to a DataFrame for analysis and plotting
-        if data:
-            df = pd.DataFrame(data)
-            df['Session-Term-Exam'] = df['Session'] + " - " + df['Term'] + " - " + df['Exam']
-
-            # Latest and Predicted Averages
-            latest_average = df['Overall Average'].iloc[-1] if not df.empty else None
-            predicted_average = (
-                latest_average + (latest_average - df['Overall Average'].iloc[-2])
-                if len(df) > 1 else latest_average
-            )
-
-            # Generate Comments and Advice
-            comments_and_advice = generate_advice_and_comments(latest_average)
-
-            # Create the plot
-            plt.figure(figsize=(14, 7))
-            plt.bar(df['Session-Term-Exam'], df['Overall Average'], color='#1f77b4', alpha=0.8, label='Overall Average')
-            plt.plot(df['Session-Term-Exam'], df['Overall Average'], marker='o', color='#ff7f0e', label='Trend Line', linewidth=2)
-            plt.xticks(rotation=45, ha='right', fontsize=10)
-            plt.yticks(fontsize=10)
-            plt.xlabel('Session - Term - Exam', fontsize=12)
-            plt.ylabel('Overall Average', fontsize=12)
-            plt.title(f'Performance Trends: {student_class.name}', fontsize=14, fontweight='bold')
-            plt.legend(fontsize=10)
-            plt.grid(axis='y', linestyle='--', alpha=0.7)
-            plt.tight_layout()
-
-            # Save the graph to a base64 string
-            buffer = BytesIO()
-            plt.savefig(buffer, format='png')
-            buffer.seek(0)
-            image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-            buffer.close()
-            plt.close()
-
-            # Store insights
+        if not data:
             class_insights[student_class.name] = {
-                'graph': image_base64,
-                'latest_average': latest_average,
-                'predicted_average': predicted_average,
-                'comments_and_advice': comments_and_advice,
+                'graph': None,
+                'latest_average': None,
+                'predicted_average': None,
+                'comments_and_advice': "No performance data available for this class."
             }
+            continue
+
+        df = pd.DataFrame(data)
+        # Convert to float to avoid any Decimal issues
+        df['Overall Average'] = df['Overall Average'].astype(float)
+        df['Index'] = range(len(df))
+        latest_average = df['Overall Average'].iloc[-1]
+
+        x = df['Index'].values.reshape(-1, 1)
+        y = df['Overall Average'].values.reshape(-1, 1)
+        model, model_type = use_advanced_model_if_possible(x, y)
+        predicted_average = float(model.predict([[len(df)]])[0])
+
+        comments_and_advice = (
+            f"The class {student_class.name} is showing improvement. "
+            f"Predicted next average: {predicted_average:.2f}/50."
+            if predicted_average > latest_average else
+            f"The class {student_class.name} may face a plateau or decline. "
+            f"Predicted next average: {predicted_average:.2f}/50, lower than {latest_average:.2f}/50."
+        )
+        comments_and_advice += " Tailor teaching methods and resources accordingly."
+
+        fig, ax = plt.subplots(figsize=(14, 7))
+        sns.barplot(x='Session', y='Overall Average', hue='Exam', data=df, ci=None, ax=ax)
+        ax.tick_params(axis='x', rotation=45)
+        ax.set_xlabel('Session', fontsize=12)
+        ax.set_ylabel('Overall Average (Out of 50)', fontsize=12)
+        ax.set_title(f'Performance Trends: {student_class.name} (Model: {model_type})', fontsize=14, fontweight='bold')
+        ax.legend(fontsize=10)
+        fig.tight_layout()
+
+        image_base64 = _figure_to_base64(fig)
+        plt.close(fig)
+
+        class_insights[student_class.name] = {
+            'graph': image_base64,
+            'latest_average': latest_average,
+            'predicted_average': predicted_average,
+            'comments_and_advice': comments_and_advice
+        }
 
     return class_insights
 
-def generate_subject_advice_and_comments(overall_average):
-    """
-    Generate descriptive comments and advice for a subject based on its overall average.
-    """
-    if overall_average < 5:
-        return (
-            "The overall average for this subject is critically low. It suggests severe difficulties in comprehension. "
-            "Immediate steps include:\n"
-            "- Extra support classes for foundational concepts.\n"
-            "- One-on-one tutoring to address specific challenges.\n"
-            "- Interactive teaching methods to engage students more effectively."
-        )
-    elif overall_average < 15:
-        return (
-            "This subject's performance is low. Students may need targeted practice. Recommendations:\n"
-            "- Use practice exercises and regular tests to reinforce learning.\n"
-            "- Provide detailed feedback to guide improvement.\n"
-            "- Focus on simplifying complex topics with visual aids or real-life examples."
-        )
-    elif overall_average < 25:
-        return (
-            "The performance in this subject is below average. To enhance results:\n"
-            "- Conduct group discussions and collaborative activities to encourage peer learning.\n"
-            "- Assign more homework and monitor progress closely.\n"
-            "- Schedule regular revision sessions to strengthen retention."
-        )
-    elif overall_average < 35:
-        return (
-            "The subject is performing at an average level. To maintain and improve:\n"
-            "- Encourage consistent participation and self-study among students.\n"
-            "- Provide additional materials like summaries and key points for revision.\n"
-            "- Introduce competitive activities like quizzes to make learning engaging."
-        )
-    elif overall_average < 45:
-        return (
-            "The subject performance is good and approaching excellence. Suggestions:\n"
-            "- Explore advanced topics to challenge students and keep them engaged.\n"
-            "- Reward good performance to maintain motivation.\n"
-            "- Continue regular assessments to track and refine progress."
-        )
-    elif overall_average < 50:
-        return (
-            "Excellent performance in this subject! To sustain this level:\n"
-            "- Maintain regular study habits and encourage group discussions.\n"
-            "- Introduce enrichment programs like workshops or guest lectures.\n"
-            "- Celebrate achievements to keep morale high."
-        )
-    else:
-        return (
-            "Outstanding performance in this subject! To ensure continued excellence:\n"
-            "- Focus on advanced applications and research-oriented projects.\n"
-            "- Encourage students to assist peers in other classes.\n"
-            "- Recognize both teachers and students for their efforts."
-        )
 
+############################################
+# Student Trends in Classes
+############################################
 
-from apps.corecode.models import Subject
-
-def draw_subject_trends_for_class():
-    """
-    Draws time-series line graphs for each subject in each class.
-    Shows trends of subject-level overall averages across session terms and exams.
-    Provides insights including latest and predicted overall averages, along with comments and advice.
-    """
-    classes = StudentClass.objects.all()
-    class_subject_insights = {}
-
-    for student_class in classes:
-        # Query all subjects studied in the class
-        subjects = Result.objects.filter(current_class=student_class).values_list('subject', flat=True).distinct()
-        subjects = [Subject.objects.get(pk=subject_id) for subject_id in subjects]
-        subject_insights = {}
-
-        for subject in subjects:
-            # Query results for the given subject in the given class
-            results = Result.objects.filter(current_class=student_class, subject=subject)
-
-            # Prepare data for the graph
-            data = []
-            for session in AcademicSession.objects.all():
-                for term in AcademicTerm.objects.all():
-                    for exam in ExamType.objects.all():
-                        # Filter results for the given session, term, and exam
-                        subject_results = results.filter(session=session, term=term, exam=exam)
-
-                        if subject_results.exists():
-                            # Calculate the overall average for the subject in the class
-                            subject_averages = [res.average for res in subject_results if res.average is not None]
-                            if subject_averages:
-                                overall_average = sum(subject_averages) / len(subject_averages)
-                                data.append({
-                                    'Session': session.name,
-                                    'Term': term.name,
-                                    'Exam': exam.name,
-                                    'Overall Average': overall_average
-                                })
-
-            # Convert data to a DataFrame for plotting and analysis
-            if data:
-                df = pd.DataFrame(data)
-                df['Session-Term-Exam'] = df['Session'] + " - " + df['Term'] + " - " + df['Exam']
-
-                # Latest and Predicted Averages
-                latest_average = df['Overall Average'].iloc[-1] if not df.empty else None
-                predicted_average = (
-                    latest_average + (latest_average - df['Overall Average'].iloc[-2])
-                    if len(df) > 1 else latest_average
-                )
-
-                # Generate Comments and Advice
-                comments_and_advice = generate_subject_advice_and_comments(latest_average)
-
-                # Create the plot
-                plt.figure(figsize=(14, 7))
-                plt.plot(df['Session-Term-Exam'], df['Overall Average'], marker='o', color='#4a90e2', linewidth=2)
-                plt.xticks(rotation=45, ha='right', fontsize=10)
-                plt.yticks(fontsize=10)
-                plt.xlabel('Session - Term - Exam', fontsize=12)
-                plt.ylabel('Overall Average', fontsize=12)
-                plt.title(f'Trends for {subject.name} in Class {student_class.name}', fontsize=14, fontweight='bold')
-                plt.grid(axis='y', linestyle='--', alpha=0.7)
-                plt.tight_layout()
-
-                # Save the graph to a base64 string
-                buffer = BytesIO()
-                plt.savefig(buffer, format='png')
-                buffer.seek(0)
-                image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-                buffer.close()
-                plt.close()
-
-                # Store insights
-                subject_insights[subject.name] = {
-                    'graph': image_base64,
-                    'latest_average': latest_average,
-                    'predicted_average': predicted_average,
-                    'comments_and_advice': comments_and_advice,
-                }
-
-        # Add all subject insights for the class
-        class_subject_insights[student_class.name] = subject_insights
-
-    return class_subject_insights
-
-import matplotlib.pyplot as plt
-import pandas as pd
-from io import BytesIO
-import base64
-from apps.result.models import Result
-from apps.corecode.models import AcademicSession, AcademicTerm, ExamType, StudentClass
-from apps.students.models import Student
-
-from apps.students.models import Student
-from apps.corecode.models import Subject
-
-def draw_student_trends_in_classes():
+def draw_student_trends_in_classes() -> Dict[str, Dict[int, Dict[str, Any]]]:
     """
     Draws performance trends for each student in their respective classes.
-    Displays overall averages of the student in all session-term-exams.
-    Also calculates strongest, medium, and weakest subjects for each student.
+    Using average (out of 50) from the Result model directly.
     """
     classes = StudentClass.objects.all()
-    trends_data = {}
+    sessions = AcademicSession.objects.all()
+    terms = AcademicTerm.objects.all()
+    exams = ExamType.objects.all()
+    trends_data: Dict[str, Dict[int, Dict[str, Any]]] = {}
 
     for student_class in classes:
-        # Query results for the given class
-        results = Result.objects.filter(current_class=student_class)
+        results = Result.objects.filter(current_class=student_class).exclude(average__isnull=True)
         students = results.values_list('student', flat=True).distinct()
 
-        class_students_data = {}
-
+        class_students_data: Dict[int, Dict[str, Any]] = {}
         for student_id in students:
-            # Get the student object
-            student = Student.objects.filter(id=student_id).first()
-
-            if not student:
+            student_obj = Student.objects.filter(id=student_id).first()
+            if not student_obj:
                 continue
 
-            # Prepare data for the graph
             student_data = []
-            subject_overall_averages = {}  # For subject trends
+            subject_overall_averages: Dict[str, List[float]] = {}
 
-            for session in AcademicSession.objects.all():
-                for term in AcademicTerm.objects.all():
-                    for exam in ExamType.objects.all():
-                        # Filter results for the student in the given session, term, and exam
+            for session in sessions:
+                for term in terms:
+                    for exam in exams:
                         student_results = results.filter(student=student_id, session=session, term=term, exam=exam)
+                        if not student_results.exists():
+                            continue
+                        avg_scores = list(student_results.values_list('average', flat=True))
+                        avg_scores = [float(v) for v in avg_scores if v is not None]
+                        if avg_scores:
+                            overall_average = sum(avg_scores) / len(avg_scores)
+                            for r in student_results:
+                                subj_name = r.subject.name
+                                subject_overall_averages.setdefault(subj_name, []).append(float(r.average))
+                            student_data.append({
+                                'Session': session.name,
+                                'Term': term.name,
+                                'Exam': exam.name,
+                                'Overall Average': overall_average,
+                            })
 
-                        if student_results.exists():
-                            # Calculate overall average for the student in this session, term, exam
-                            subject_averages = []
-                            for res in student_results:
-                                if res.test_score is not None and res.exam_score is not None:
-                                    subject_average = (res.test_score + res.exam_score) / 2
-                                elif res.test_score is not None:
-                                    subject_average = res.test_score
-                                elif res.exam_score is not None:
-                                    subject_average = res.exam_score
-                                else:
-                                    subject_average = 0
+            # Determine strongest, medium, weakest
+            strongest_subjects, medium_subjects, weakest_subjects = [], [], []
+            for subj, avgs in subject_overall_averages.items():
+                avg = sum(avgs) / len(avgs)
+                if avg > 40:  # Over 80%
+                    strongest_subjects.append(subj)
+                elif 25 < avg <= 40:
+                    medium_subjects.append(subj)
+                else:
+                    weakest_subjects.append(subj)
 
-                                subject_averages.append(subject_average)
-
-                                # Update subject overall average
-                                if res.subject.name not in subject_overall_averages:
-                                    subject_overall_averages[res.subject.name] = []
-                                subject_overall_averages[res.subject.name].append(subject_average)
-
-                            if subject_averages:
-                                overall_average = sum(subject_averages) / len(subject_averages)
-                                student_data.append({
-                                    'Session': session.name,
-                                    'Term': term.name,
-                                    'Exam': exam.name,
-                                    'Overall Average': overall_average,
-                                })
-
-            # Calculate strongest, medium, and weakest subjects
-            strongest_subjects = []
-            medium_subjects = []
-            weakest_subjects = []
-
-            for subject, averages in subject_overall_averages.items():
-                over_and_over_subject_average = sum(averages) / len(averages)
-
-                if over_and_over_subject_average > 40:
-                    strongest_subjects.append(subject)
-                elif 30 < over_and_over_subject_average <= 40:
-                    medium_subjects.append(subject)
-                elif over_and_over_subject_average <= 29:
-                    weakest_subjects.append(subject)
-
-            # Create DataFrame and plot the graph
             if student_data:
                 df = pd.DataFrame(student_data)
                 df['Session-Term-Exam'] = df['Session'] + " - " + df['Term'] + " - " + df['Exam']
+                df['Overall Average'] = df['Overall Average'].astype(float)
 
-                # Plot the graph
-                plt.figure(figsize=(14, 7))
-                plt.bar(df['Session-Term-Exam'], df['Overall Average'], color='skyblue', alpha=0.7, label='Overall Average')
-                plt.plot(df['Session-Term-Exam'], df['Overall Average'], marker='o', color='orange', label='Trend Line', linewidth=2)
-                plt.xticks(rotation=45, ha='right')
-                plt.xlabel('Session - Term - Exam', fontsize=12)
-                plt.ylabel('Overall Average', fontsize=12)
-                plt.title(f"Performance Trends for {student.firstname} {student.middle_name} {student.surname} in Class: {student_class.name}", fontsize=14, fontweight='bold')
-                plt.legend(fontsize=10)
-                plt.grid(axis='y', linestyle='--', alpha=0.7)
-                plt.tight_layout()
+                x = np.arange(len(df)).reshape(-1, 1)
+                y = df['Overall Average'].values.reshape(-1, 1)
 
-                # Save the graph to a base64 string
-                buffer = BytesIO()
-                plt.savefig(buffer, format='png')
-                buffer.seek(0)
-                image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-                buffer.close()
-                plt.close()
+                if len(df) > 1:
+                    model, _ = use_advanced_model_if_possible(x, y)
+                    predicted_average = float(model.predict([[len(df)]])[0])
+                else:
+                    predicted_average = df['Overall Average'].iloc[-1]
 
-                # Calculate the latest overall average
                 latest_average = df['Overall Average'].iloc[-1]
-
-                # Calculate the over-and-over average
                 over_and_over_average = df['Overall Average'].mean()
 
-                # Predict the next overall average
-                predicted_average = latest_average + (latest_average - df['Overall Average'].iloc[-2]) if len(df) > 1 else latest_average
-
-                # Generate comments and advice
                 comments_and_advice = generate_comments_and_advice(
-                    over_and_over_average, latest_average, strongest_subjects, medium_subjects, weakest_subjects
+                    over_and_over_average,
+                    latest_average,
+                    strongest_subjects,
+                    medium_subjects,
+                    weakest_subjects
                 )
 
-                # Add data to the class students dictionary
-                class_students_data[student.id] = {
-                    'name': f"{student.firstname} {student.middle_name} {student.surname}",
+                fig, ax = plt.subplots(figsize=(14, 7))
+                ax.bar(df['Session-Term-Exam'], df['Overall Average'], color='skyblue', alpha=0.7, label='Overall Average')
+                ax.plot(df['Session-Term-Exam'], df['Overall Average'], marker='o', color='orange', label='Trend Line', linewidth=2)
+                ax.tick_params(axis='x', rotation=45)
+                ax.set_xlabel('Session - Term - Exam', fontsize=12)
+                ax.set_ylabel('Overall Average (Out of 50)', fontsize=12)
+                ax.set_title(
+                    f"Performance Trends for {student_obj.firstname} {student_obj.middle_name} {student_obj.surname} in {student_class.name}", 
+                    fontsize=14, fontweight='bold'
+                )
+                ax.legend(fontsize=10)
+                ax.grid(axis='y', linestyle='--', alpha=0.7)
+                fig.tight_layout()
+
+                image_base64 = _figure_to_base64(fig)
+                plt.close(fig)
+
+                class_students_data[student_id] = {
+                    'name': f"{student_obj.firstname} {student_obj.middle_name} {student_obj.surname}",
                     'graph': image_base64,
                     'latest_average': latest_average,
                     'over_and_over_average': over_and_over_average,
@@ -462,311 +363,197 @@ def draw_student_trends_in_classes():
                     'comments_and_advice': comments_and_advice,
                 }
 
-        # Add student data to the class trends data
         if class_students_data:
             trends_data[student_class.name] = class_students_data
 
     return trends_data
 
 
-def generate_comments_and_advice(over_and_over_average, latest_average, strongest, medium, weakest):
+############################################
+# Subject Trends for Class
+############################################
+
+def draw_subject_trends_for_class() -> Dict[str, Dict[str, Dict[str, Any]]]:
     """
-    Generate comments and advice based on over-and-over average and latest average, 
-    as well as subject trends.
-    """
-    advice = []
-
-    # General performance trends
-    if over_and_over_average < 5:
-        advice.append(
-            f"The overall performance is critically low (Over-and-over average: {over_and_over_average:.2f}). "
-            f"The latest performance ({latest_average:.2f}) confirms this. Immediate intervention is needed."
-        )
-    elif over_and_over_average < 15:
-        advice.append(
-            f"The performance is below average (Over-and-over average: {over_and_over_average:.2f}). "
-            f"The latest performance ({latest_average:.2f}) shows some progress. Encourage more focused study sessions."
-        )
-    elif over_and_over_average < 25:
-        advice.append(
-            f"The performance is slightly below average (Over-and-over average: {over_and_over_average:.2f}). "
-            f"The latest performance ({latest_average:.2f}) shows room for improvement. Structured support and assessments can help."
-        )
-    elif over_and_over_average < 35:
-        advice.append(
-            f"The performance is average (Over-and-over average: {over_and_over_average:.2f}). "
-            f"The latest performance ({latest_average:.2f}) shows steady progress. Consistency is key."
-        )
-    elif over_and_over_average < 45:
-        advice.append(
-            f"The performance is strong (Over-and-over average: {over_and_over_average:.2f}). "
-            f"The latest performance ({latest_average:.2f}) reflects great effort. Keep striving for excellence."
-        )
-    else:
-        advice.append(
-            f"Excellent performance! (Over-and-over average: {over_and_over_average:.2f}). "
-            f"The latest performance ({latest_average:.2f}) shows outstanding consistency. Maintain this momentum!"
-        )
-
-    # Subject trends
-    if strongest:
-        advice.append(
-            f"Congratulations on your strongest subjects: {', '.join(strongest)}. Keep up the excellent performance in these areas."
-        )
-    if medium:
-        advice.append(
-            f"The medium subjects ({', '.join(medium)}) show room for growth. Focus on improving your understanding in these areas."
-        )
-    if weakest:
-        advice.append(
-            f"The weakest subjects ({', '.join(weakest)}) require immediate attention. Seek help, review fundamentals, and practice regularly."
-        )
-
-    return " ".join(advice)
-
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
-
-def draw_class_regression_trends():
-    """
-    Draws regression graphs for each student in their respective classes.
-    Categorizes students based on the slope of the regression line and overall performance.
-    Ensures no duplication in group assignments.
-    Returns a dictionary with class names as keys and another dictionary of student details as values.
+    Draw time-series line graphs for each subject in each class.
+    Returns a nested dictionary keyed by class name and subject name with their performance insights.
     """
     classes = StudentClass.objects.all()
-    trends_data = {}
+    sessions = AcademicSession.objects.all()
+    terms = AcademicTerm.objects.all()
+    exams = ExamType.objects.all()
+
+    class_subject_insights: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
     for student_class in classes:
         results = Result.objects.filter(current_class=student_class)
-        students = results.values_list('student', flat=True).distinct()
+        subject_ids = results.values_list('subject', flat=True).distinct()
+        subjects = Subject.objects.filter(pk__in=subject_ids)
 
-        class_students_data = {}
-        positive_trend = []
-        constant_trend = []
-        negative_trend = []
-        danger_students = []
-        medium_students = []
-        excellent_students = []
+        subject_insights: Dict[str, Dict[str, Any]] = {}
 
-        for student_id in students:
-            student = Student.objects.filter(id=student_id).first()
+        for subject in subjects:
+            data = []
+            for session in sessions:
+                for term in terms:
+                    for exam in exams:
+                        subject_results = results.filter(session=session, term=term, exam=exam, subject=subject)
+                        if not subject_results.exists():
+                            continue
+                        scores = []
+                        for res in subject_results:
+                            ts = res.test_score or Decimal('0')
+                            es = res.exam_score or Decimal('0')
+                            # Convert to float
+                            total_score = float(ts) + float(es)
+                            scores.append(total_score)
+                        if scores:
+                            avg_score = sum(scores) / len(scores)
+                            data.append({
+                                'Session': session.name,
+                                'Term': term.name,
+                                'Exam': exam.name,
+                                'Average': avg_score
+                            })
 
-            if not student:
+            if not data:
+                subject_insights[subject.name] = {
+                    'graph': None,
+                    'latest_average': None,
+                    'predicted_average': None,
+                    'comments_and_advice': "No data available for this subject."
+                }
                 continue
 
-            student_data = []
-            for session in AcademicSession.objects.all():
-                for term in AcademicTerm.objects.all():
-                    for exam in ExamType.objects.all():
-                        student_results = results.filter(student=student_id, session=session, term=term, exam=exam)
+            df = pd.DataFrame(data)
+            df['Average'] = df['Average'].astype(float)
+            df['Index'] = range(len(df))
+            latest_average = df['Average'].iloc[-1]
 
-                        if student_results.exists():
-                            subject_averages = []
-                            for res in student_results:
-                                if res.test_score is not None and res.exam_score is not None:
-                                    subject_average = (res.test_score + res.exam_score) / 2
-                                elif res.test_score is not None:
-                                    subject_average = res.test_score
-                                elif res.exam_score is not None:
-                                    subject_average = res.exam_score
-                                else:
-                                    subject_average = 0
-                                subject_averages.append(subject_average)
+            x = df['Index'].values.reshape(-1, 1)
+            y = df['Average'].values.reshape(-1, 1)
+            model, model_type = use_advanced_model_if_possible(x, y)
+            predicted_average = float(model.predict([[len(df)]])[0])
 
-                            if subject_averages:
-                                overall_average = sum(subject_averages) / len(subject_averages)
-                                student_data.append(overall_average)
+            over_and_over_avg = df['Average'].mean()
 
-            if student_data:
-                # Generate x-axis values (e.g., exam indices)
-                x_values = np.arange(len(student_data)).reshape(-1, 1)
-                y_values = np.array(student_data).reshape(-1, 1)
+            strongest_subjects, medium_subjects, weakest_subjects = [], [], []
+            if over_and_over_avg > 80:
+                strongest_subjects = [subject.name]
+            elif over_and_over_avg > 50:
+                medium_subjects = [subject.name]
+            else:
+                weakest_subjects = [subject.name]
 
-                # Perform linear regression
-                model = LinearRegression()
-                model.fit(x_values, y_values)
-                slope = model.coef_[0][0]  # Slope of the regression line
+            comments_and_advice = generate_comments_and_advice(
+                over_and_over_avg, latest_average, strongest_subjects, medium_subjects, weakest_subjects
+            )
 
-                # Calculate over-and-over trend average
-                over_and_over_average = sum(student_data) / len(student_data)
+            fig, ax = plt.subplots(figsize=(14, 7))
+            x_labels = df['Session'] + "-" + df['Term'] + "-" + df['Exam']
+            ax.bar(x_labels, df['Average'], color='skyblue', alpha=0.7, label='Average')
+            ax.plot(x_labels, df['Average'], marker='o', color='orange', label='Trend Line', linewidth=2)
+            ax.tick_params(axis='x', rotation=45)
+            ax.set_xlabel('Session - Term - Exam', fontsize=12)
+            ax.set_ylabel('Average Score', fontsize=12)
+            ax.set_title(
+                f"Subject Performance Trends for {subject.name} in {student_class.name} (Model: {model_type})",
+                fontsize=14, fontweight='bold'
+            )
+            ax.legend(fontsize=10)
+            ax.grid(axis='y', linestyle='--', alpha=0.7)
+            fig.tight_layout()
 
-                # Plot the graph
-                plt.figure(figsize=(10, 5))
-                plt.scatter(x_values, y_values, color='blue', label='Overall Average (dots)')
-                plt.plot(x_values, model.predict(x_values), color='red', linewidth=2, label='Regression Line')
-                plt.title(f"Regression Trend for {student.firstname} {student.middle_name} {student.surname}")
-                plt.xlabel('Session-Term-Exam Index')
-                plt.ylabel('Overall Average')
-                plt.legend()
-                plt.grid()
-                plt.tight_layout()
+            image_base64 = _figure_to_base64(fig)
+            plt.close(fig)
 
-                # Save the graph to a base64 string
-                buffer = BytesIO()
-                plt.savefig(buffer, format='png')
-                buffer.seek(0)
-                image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-                buffer.close()
-                plt.close()
-
-                # Categorize based on slope
-                if slope > 0:
-                    slope_category = "Positive Trend"
-                    positive_trend.append(f"{student.firstname} {student.middle_name} {student.surname}")
-                elif slope < 0:
-                    slope_category = "Negative Trend"
-                    negative_trend.append(f"{student.firstname} {student.middle_name} {student.surname}")
-                else:
-                    slope_category = "Constant Trend"
-                    constant_trend.append(f"{student.firstname} {student.middle_name} {student.surname}")
-
-                # Categorize based on over-and-over average
-                if over_and_over_average < 25:
-                    danger_students.append(f"{student.firstname} {student.middle_name} {student.surname}")
-                    advice = (
-                        "Your performance is critically low. Focus on understanding core concepts, seek help from teachers, "
-                        "and participate actively in revision sessions to improve."
-                    )
-                elif over_and_over_average < 41:
-                    medium_students.append(f"{student.firstname} {student.middle_name} {student.surname}")
-                    advice = (
-                        "Your performance is at a medium level. Continue working steadily, focus on weak areas, and aim for more consistency in your studies."
-                    )
-                else:
-                    excellent_students.append(f"{student.firstname} {student.middle_name} {student.surname}")
-                    advice = (
-                        "Congratulations on your excellent performance! Keep up the good work, continue challenging yourself, "
-                        "and help your peers for collective success."
-                    )
-
-                # Add data to the class students dictionary
-                class_students_data[student.id] = {
-                    'name': f"{student.firstname} {student.middle_name} {student.surname}",
-                    'graph': image_base64,
-                    'slope_category': slope_category,
-                    'over_and_over_average': over_and_over_average,
-                    'advice': advice,
-                }
-
-        # Ensure no duplication in group assignments
-        positive_trend = list(set(positive_trend))
-        constant_trend = list(set(constant_trend))
-        negative_trend = list(set(negative_trend))
-        danger_students = list(set(danger_students))
-        medium_students = list(set(medium_students))
-        excellent_students = list(set(excellent_students))
-
-        # Add trend data to the dictionary
-        if class_students_data:
-            trends_data[student_class.name] = {
-                'students': class_students_data,
-                'positive_trend': positive_trend,
-                'constant_trend': constant_trend,
-                'negative_trend': negative_trend,
-                'danger_students': danger_students,
-                'medium_students': medium_students,
-                'excellent_students': excellent_students,
+            subject_insights[subject.name] = {
+                'graph': image_base64,
+                'latest_average': latest_average,
+                'predicted_average': predicted_average,
+                'comments_and_advice': comments_and_advice
             }
 
-    return trends_data
+        class_subject_insights[student_class.name] = subject_insights
 
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
-from apps.staffs.models import Staff
-from django.db import models
+    return class_subject_insights
 
-def draw_salary_distribution_charts():
+
+############################################
+# Salary Distribution Charts
+############################################
+
+def draw_salary_distribution_charts() -> Tuple[
+    Optional[str], Optional[str], Optional[str], Dict[str, float], List[Dict[str, Any]], float
+]:
     """
-    Generates two pie charts:
-    1. Salary distribution by occupation.
-    2. Salary distribution by individual staff.
-    Returns both pie charts as base64 encoded strings, salary details by occupation, 
-    salary details by staff, and total salary.
+    Generates salary distribution charts by occupation and staff members.
+    Returns occupation chart, staff chart, error message, occupation distribution, staff distribution, and total salary.
     """
     staff_members = Staff.objects.filter(current_status="active")
-    
+
     if not staff_members.exists():
-        return None, None, "No active staff members to analyze.", {}, {}, 0
+        return None, None, "No active staff members to analyze.", {}, [], 0
 
-    # Total salary
-    total_salary = staff_members.aggregate(total=models.Sum('salary'))['total'] or 0
-
+    total_salary = staff_members.aggregate(total=Sum('salary'))['total'] or Decimal('0')
     if total_salary == 0:
-        return None, None, "No salary data available to analyze.", {}, {}, 0
+        return None, None, "No salary data available to analyze.", {}, [], 0
 
-    # Salary by occupation
+    total_salary_float = float(total_salary)
     occupations = staff_members.values_list('occupation', flat=True).distinct()
     salary_by_occupation = {
-        occupation: staff_members.filter(occupation=occupation).aggregate(total=models.Sum('salary'))['total'] or 0
+        occupation: float(staff_members.filter(occupation=occupation).aggregate(total=Sum('salary'))['total'] or 0)
         for occupation in occupations
     }
 
-    # Salary by staff
     salary_by_staff = staff_members.values('firstname', 'middle_name', 'surname', 'salary').order_by('-salary')
 
-    # Generate Pie Chart for Occupations
-    occupation_labels = [occupation.title().replace("_", " ") for occupation in salary_by_occupation.keys()]
-    occupation_percentages = [
-        (salary / total_salary) * 100 for salary in salary_by_occupation.values()
-    ]
-    plt.figure(figsize=(6, 6))
-    plt.pie(
+    # Occupation chart
+    occupation_labels = [o.title().replace("_", " ") for o in salary_by_occupation.keys()]
+    occupation_percentages = [(s / total_salary_float) * 100 for s in salary_by_occupation.values()]
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.pie(
         occupation_percentages,
         labels=occupation_labels,
         autopct=lambda p: f"{p:.1f}%" if p > 0 else "",
         colors=plt.cm.tab10.colors,
-        startangle=90,
+        startangle=90
     )
-    plt.title("Salary Distribution by Occupation", fontsize=14, fontweight="bold")
-    plt.axis('equal')
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    occupation_chart = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    buffer.close()
-    plt.close()
+    ax.set_title("Salary Distribution by Occupation", fontsize=14, fontweight="bold")
+    ax.axis('equal')
+    occupation_chart = _figure_to_base64(fig)
+    plt.close(fig)
 
-    # Generate Pie Chart for Staff
-    staff_labels = [
-        f"{staff['firstname']} {staff['middle_name']} {staff['surname']}" for staff in salary_by_staff
-    ]
-    staff_percentages = [
-        (staff['salary'] / total_salary) * 100 for staff in salary_by_staff
-    ]
-    plt.figure(figsize=(6, 6))
-    plt.pie(
+    # Staff chart
+    staff_percentages = [(float(s['salary']) / total_salary_float) * 100 for s in salary_by_staff]
+    staff_labels = [f"{s['firstname']} {s['middle_name']} {s['surname']}" for s in salary_by_staff]
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.pie(
         staff_percentages,
         labels=staff_labels,
         autopct=lambda p: f"{p:.1f}%" if p > 0 else "",
         colors=plt.cm.Set3.colors,
-        startangle=90,
+        startangle=90
     )
-    plt.title("Salary Distribution by Staff", fontsize=14, fontweight="bold")
-    plt.axis('equal')
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    staff_chart = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    buffer.close()
-    plt.close()
+    ax.set_title("Salary Distribution by Staff", fontsize=14, fontweight="bold")
+    ax.axis('equal')
+    staff_chart = _figure_to_base64(fig)
+    plt.close(fig)
 
-    return occupation_chart, staff_chart, None, salary_by_occupation, salary_by_staff, total_salary
+    return occupation_chart, staff_chart, None, salary_by_occupation, list(salary_by_staff), total_salary_float
 
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
-from django.db.models import Sum
-from apps.finance.models import SalaryInvoice
+
+############################################
+# Salary Variation Over Time
+############################################
 
 def draw_salary_variation_line_chart():
     """
-    Calculates the overall total salary given each year-month and plots a line graph.
-    Returns the graph as a base64 encoded string and salary data for each year-month.
+    Plots the variation of total salary given each year-month.
+    Returns a base64 graph, the salary data, and an error message if any.
     """
-    # Query SalaryInvoices and group by year-month
     salary_data = (
         SalaryInvoice.objects.values("month")
         .annotate(total_given_salary=Sum("total_given_salary"))
@@ -774,479 +561,334 @@ def draw_salary_variation_line_chart():
     )
 
     if not salary_data.exists():
-        return None, "No salary data available to analyze."
+        return None, None, "No salary data available to analyze."
 
-    # Prepare data for the graph
     months = [entry["month"].strftime("%Y-%m") for entry in salary_data]
-    total_salaries = [entry["total_given_salary"] for entry in salary_data]
+    total_salaries = [float(entry["total_given_salary"] or 0) for entry in salary_data]
 
-    # Plot the line graph
-    plt.figure(figsize=(10, 6))
-    plt.plot(months, total_salaries, marker="o", linestyle="-", color="blue", label="Total Given Salary")
-    plt.xticks(rotation=45, fontsize=10)
-    plt.yticks(fontsize=10)
-    plt.xlabel("Year-Month", fontsize=12)
-    plt.ylabel("Total Given Salary", fontsize=12)
-    plt.title("Variation of Total Salary Given Across Year-Month", fontsize=14, fontweight="bold")
-    plt.grid(axis="y", linestyle="--", alpha=0.7)
-    plt.legend(fontsize=10)
-    plt.tight_layout()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(months, total_salaries, marker="o", linestyle="-", color="blue", label="Total Given Salary")
+    ax.tick_params(axis='x', rotation=45, labelsize=10)
+    ax.tick_params(axis='y', labelsize=10)
+    ax.set_xlabel("Year-Month", fontsize=12)
+    ax.set_ylabel("Total Given Salary", fontsize=12)
+    ax.set_title("Variation of Total Salary Given Across Year-Month", fontsize=14, fontweight="bold")
+    ax.grid(axis="y", linestyle="--", alpha=0.7)
+    ax.legend(fontsize=10)
+    fig.tight_layout()
 
-    # Convert the graph to a base64 string
-    buffer = BytesIO()
-    plt.savefig(buffer, format="png")
-    buffer.seek(0)
-    graph_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-    buffer.close()
-    plt.close()
+    graph_base64 = _figure_to_base64(fig)
+    plt.close(fig)
 
-    return graph_base64, salary_data
+    return graph_base64, salary_data, None
 
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
-import pandas as pd
-import seaborn as sns
-from expenditures.models import Category, Expenditure, ExpenditureInvoice
-from datetime import datetime
-from django.db.models import Sum
 
-from decimal import Decimal
-from django.db.models import Sum
-from datetime import datetime
-import pandas as pd
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
-import seaborn as sns
-from expenditures.models import Expenditure, ExpenditureInvoice
+############################################
+# Expenditure Heatmap and Waterfall
+############################################
 
-def draw_expenditure_heatmap_and_waterfall():
+def draw_expenditure_heatmap_and_waterfall() -> Tuple[
+    Optional[str],
+    Optional[str],
+    Decimal,
+    Dict[str, float],
+    float,
+    str,
+    Optional[str]
+]:
     """
-    Generates a heatmap of expenditures by category and a waterfall chart showing how the expenditure invoice was spent.
-    Returns:
-        - Heatmap as a base64 string.
-        - Waterfall chart as a base64 string.
-        - Total initial balance.
-        - Total expenditures by category.
-        - Remaining balance.
-        - Description and advice for the trend.
-        - Error message (if any).
+    Generates an expenditure heatmap and waterfall chart for the current year.
+    Returns heatmap, waterfall chart, total initial balance, category expenditures, remaining balance,
+    trend description, and error message if any.
     """
     current_year = datetime.now().year
-
-    # Filter expenditures and invoices for the current year
     expenditures = Expenditure.objects.filter(date__year=current_year)
     invoices = ExpenditureInvoice.objects.filter(date__year=current_year)
 
-    # Check if there are expenditures or invoices
     if not expenditures.exists() or not invoices.exists():
-        return None, None, Decimal('0'), {}, Decimal('0'), "No expenditure or invoice data available for the current year.", None
+        return None, None, Decimal('0'), {}, 0.0, "", "No expenditure or invoice data for the current year."
 
-    # Total initial balance
     total_initial_balance = invoices.aggregate(total=Sum('initial_balance'))['total'] or Decimal('0')
+    total_initial_balance_float = float(total_initial_balance)
 
-    # Total expenditures by category
-    category_expenditures = (
+    category_data = (
         expenditures.values('category__name')
         .annotate(total_amount=Sum('amount'))
         .order_by('-total_amount')
     )
-    category_expenditures_dict = {
-        item['category__name']: float(item['total_amount']) for item in category_expenditures
-    }
+    category_expenditures_dict = {item['category__name']: float(item['total_amount'] or 0) for item in category_data}
 
-    # Remaining balance
     total_spent = sum(category_expenditures_dict.values())
-    remaining_balance = float(total_initial_balance) - total_spent
+    remaining_balance = total_initial_balance_float - total_spent
 
-    # Generate description and advice
     if remaining_balance > 0:
         trend_description = (
-            f"In the year {current_year}, the total expenditures amounted to TZS {total_spent:,.2f}, "
-            f"leaving a positive balance of TZS {remaining_balance:,.2f}. This indicates good financial management. "
-            "Consider reallocating the remaining funds towards future planning or investments."
+            f"Total expenditures: TZS {total_spent:,.2f}, leaving a surplus of TZS {remaining_balance:,.2f}. "
+            "Financial management is good. Consider investing the surplus strategically."
         )
     elif remaining_balance < 0:
         trend_description = (
-            f"In the year {current_year}, the total expenditures amounted to TZS {total_spent:,.2f}, "
-            f"which exceeded the initial balance by TZS {abs(remaining_balance):,.2f}. This results in a deficit. "
-            "Immediate action is needed to either reduce spending in certain categories or increase funding sources."
+            f"Total expenditures: TZS {total_spent:,.2f} exceeded initial funds by "
+            f"TZS {abs(remaining_balance):,.2f}. Immediate cost control measures needed."
         )
     else:
         trend_description = (
-            f"In the year {current_year}, the total expenditures exactly matched the initial balance (TZS {total_initial_balance:,.2f}), "
-            "leaving no remaining funds. While this shows efficient spending, ensure adequate planning for unforeseen expenses."
+            f"Total expenditures matched initial balance (TZS {total_initial_balance_float:,.2f}). "
+            "Spending was exact. Ensure some flexibility for unforeseen costs."
         )
 
-    # Heatmap preparation
+    # Heatmap
     heatmap_base64 = None
     if category_expenditures_dict:
-        df = pd.DataFrame(
-            list(category_expenditures_dict.items()),
-            columns=['Category', 'Total Amount']
-        )
-        plt.figure(figsize=(6, 6))
-        sns.heatmap(
-            df.set_index('Category'),
-            annot=True,
-            fmt=".2f",
-            cmap="YlGnBu",
-            linewidths=0.5,
-            cbar_kws={'label': 'Total Amount'},
-        )
-        plt.title("Expenditure Heatmap by Category", fontsize=16, fontweight="bold")
-        plt.tight_layout()
-        buffer = BytesIO()
-        plt.savefig(buffer, format='png')
-        buffer.seek(0)
-        heatmap_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        buffer.close()
-        plt.close()
+        df = pd.DataFrame(list(category_expenditures_dict.items()), columns=['Category', 'Total Amount'])
+        pivot_df = df.set_index('Category')
 
-    # Waterfall Chart preparation
+        fig, ax = plt.subplots(figsize=(6, 6))
+        sns.heatmap(pivot_df, annot=True, fmt=".2f", cmap="YlGnBu", linewidths=0.5, cbar_kws={'label': 'Total Amount'}, ax=ax)
+        ax.set_title("Expenditure Heatmap by Category", fontsize=16, fontweight="bold")
+        fig.tight_layout()
+        heatmap_base64 = _figure_to_base64(fig)
+        plt.close(fig)
+
+    # Waterfall Chart
     waterfall_base64 = None
-    if float(total_initial_balance) > 0:
+    if total_initial_balance_float > 0:
         categories = list(category_expenditures_dict.keys()) + ['Remaining Balance']
         values = list(category_expenditures_dict.values()) + [remaining_balance]
-
-        # Prepare Waterfall Data
-        data = pd.DataFrame({
-            'Category': categories,
-            'Values': values,
-        })
+        data = pd.DataFrame({'Category': categories, 'Values': values})
         data['Cumulative'] = data['Values'].cumsum()
 
-        # Waterfall Chart Plot
-        plt.figure(figsize=(8, 6))
-        plt.bar(data['Category'], data['Values'], color=(data['Values'] > 0).map({True: 'green', False: 'red'}))
-        plt.plot(data['Category'], data['Cumulative'], marker='o', color='blue', label='Cumulative')
-        plt.title("Waterfall Chart of Expenditures", fontsize=16, fontweight="bold")
-        plt.ylabel("Amount (TZS)")
-        plt.grid(axis='y', linestyle='--', alpha=0.7)
-        plt.tight_layout()
-        buffer = BytesIO()
-        plt.savefig(buffer, format='png')
-        buffer.seek(0)
-        waterfall_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        buffer.close()
-        plt.close()
+        fig, ax = plt.subplots(figsize=(8, 6))
+        colors = ['green' if v > 0 else 'red' for v in data['Values']]
+        ax.bar(data['Category'], data['Values'], color=colors)
+        ax.plot(data['Category'], data['Cumulative'], marker='o', color='blue', label='Cumulative')
+        ax.set_title("Waterfall Chart of Expenditures", fontsize=16, fontweight="bold")
+        ax.set_ylabel("Amount (TZS)")
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+        fig.tight_layout()
+        waterfall_base64 = _figure_to_base64(fig)
+        plt.close(fig)
 
-    return heatmap_base64, waterfall_base64, total_initial_balance, category_expenditures_dict, remaining_balance, trend_description, None
+    return (heatmap_base64, waterfall_base64, total_initial_balance, category_expenditures_dict, 
+            remaining_balance, trend_description, None)
 
-from decimal import Decimal
-from django.db.models import Sum
-from io import BytesIO
-import matplotlib.pyplot as plt
-import base64
-from apps.finance.models import Receipt, StudentUniform
-from apps.corecode.models import AcademicSession
 
-def generate_profit_pie_chart():
+############################################
+# Profit Distribution
+############################################
+
+def generate_profit_pie_chart() -> Tuple[Optional[str], Optional[str]]:
     """
-    Generates a pie chart showing the percentage contributions of income sources to the school's profit.
-    Returns:
-        - Pie chart as a base64 encoded string.
-        - Error message if applicable.
+    Generates a pie chart showing profit distribution by source (Receipts vs. Uniform Sales) for the current session.
+    Returns pie chart and error message.
     """
-    # Get the current session
     current_session = AcademicSession.objects.filter(current=True).first()
-
     if not current_session:
         return None, "No current academic session available."
 
-    # Total amount from receipts
-    total_receipts = (
-        Receipt.objects.filter(invoice__session=current_session)
-        .aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
-    )
+    total_receipts = Receipt.objects.filter(invoice__session=current_session).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
+    total_uniforms = StudentUniform.objects.filter(session=current_session).aggregate(total=Sum('amount'))['total'] or Decimal('0')
 
-    # Total amount from uniforms
-    total_uniforms = (
-        StudentUniform.objects.filter(session=current_session)
-        .aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    )
-
-    # Overall total
-    overall_total = total_receipts + total_uniforms
+    total_receipts_float = float(total_receipts)
+    total_uniforms_float = float(total_uniforms)
+    overall_total = total_receipts_float + total_uniforms_float
 
     if overall_total == 0:
         return None, "No income data available for the current session."
 
-    # Calculate percentages
-    receipt_percentage = (total_receipts / overall_total) * 100 if overall_total > 0 else 0
-    uniform_percentage = (total_uniforms / overall_total) * 100 if overall_total > 0 else 0
+    receipt_percentage = (total_receipts_float / overall_total) * 100 if overall_total > 0 else 0
+    uniform_percentage = (total_uniforms_float / overall_total) * 100 if overall_total > 0 else 0
 
-    # Generate Pie Chart
     labels = ['Receipts', 'Uniform Sales']
     percentages = [receipt_percentage, uniform_percentage]
     colors = ['#007bff', '#ffc107']
 
-    plt.figure(figsize=(6, 6))
-    plt.pie(
-        percentages,
-        labels=labels,
-        autopct=lambda p: f'{p:.1f}%' if p > 0 else '',
-        colors=colors,
-        startangle=140
-    )
-    plt.title("Profit Distribution by Source", fontsize=14, fontweight='bold')
-    plt.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    pie_chart_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    buffer.close()
-    plt.close()
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.pie(percentages, labels=labels, autopct=lambda p: f'{p:.1f}%' if p > 0 else '', colors=colors, startangle=140)
+    ax.set_title("Profit Distribution by Source", fontsize=14, fontweight='bold')
+    ax.axis('equal')
+    pie_chart_base64 = _figure_to_base64(fig)
+    plt.close(fig)
 
     return pie_chart_base64, None
 
 
-from django.db.models import Sum
-from datetime import datetime
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
-from apps.finance.models import SalaryInvoice
-from expenditures.models import ExpenditureInvoice
-from apps.corecode.models import AcademicSession
+############################################
+# Expenses Analysis
+############################################
 
-
-def draw_expenses_analysis():
+def draw_expenses_analysis() -> Tuple[
+    Optional[str], Decimal, Decimal, Decimal, str
+]:
     """
-    Analyzes the school expenses by calculating total expenditure on salaries and other expenses.
-    Draws a pie chart for their distribution.
-    Returns:
-        - Pie chart as a base64 string.
-        - Total salary expenses.
-        - Total other expenses.
-        - Overall total expenses.
-        - Comments/Advice/Explanation.
+    Analyzes school expenses for the current session (salaries vs. other expenditures).
+    Returns pie chart, total salaries, total expenditures, overall total, and comments.
     """
-    # Get the current academic session
     current_session = AcademicSession.objects.filter(current=True).first()
-
     if not current_session:
-        return None, 0, 0, 0, "No active session available for analysis."
+        return None, Decimal('0'), Decimal('0'), Decimal('0'), "No active session available for analysis."
 
-    # Total salary expenses for the current session
-    total_salaries = (
-        SalaryInvoice.objects.filter(session=current_session)
-        .aggregate(total=Sum('total_given_salary'))['total']
-        or 0
-    )
+    total_salaries = SalaryInvoice.objects.filter(session=current_session).aggregate(total=Sum('total_given_salary'))['total'] or Decimal('0')
+    total_expenditures = ExpenditureInvoice.objects.filter(session=current_session).aggregate(total=Sum('initial_balance'))['total'] or Decimal('0')
 
-    # Total other expenses (ExpenditureInvoice) for the current session
-    total_expenditures = (
-        ExpenditureInvoice.objects.filter(session=current_session)
-        .aggregate(total=Sum('initial_balance'))['total']
-        or 0
-    )
-
-    # Overall total expenses
     overall_total = total_salaries + total_expenditures
+    if overall_total == 0:
+        return None, total_salaries, total_expenditures, overall_total, "No expenses recorded for this session."
 
-    # Calculate percentages
+    total_salaries_float = float(total_salaries)
+    total_expenditures_float = float(total_expenditures)
+    overall_total_float = float(overall_total)
+
     data = {
-        'Salaries': total_salaries,
-        'Expenditures': total_expenditures,
+        'Salaries': total_salaries_float,
+        'Expenditures': total_expenditures_float,
     }
-    percentages = {k: (v / overall_total * 100 if overall_total > 0 else 0) for k, v in data.items()}
-
-    # Generate the pie chart
+    sizes = [(v / overall_total_float) * 100 for v in data.values()]
     labels = list(data.keys())
-    sizes = list(percentages.values())
-    colors = ['#FF6384', '#36A2EB']  # Distinct colors for the pie chart
-    plt.figure(figsize=(6, 6))
-    plt.pie(
+    colors = ['#FF6384', '#36A2EB']
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.pie(
         sizes,
         labels=labels,
         autopct='%1.1f%%',
         startangle=140,
         colors=colors,
-        textprops={'fontsize': 12},
+        textprops={'fontsize': 12}
     )
-    plt.title(f"Expenses Distribution for {current_session.name}", fontsize=14, fontweight="bold")
-    plt.tight_layout()
+    ax.set_title(f"Expenses Distribution for {current_session.name}", fontsize=14, fontweight="bold")
+    fig.tight_layout()
 
-    # Convert chart to base64
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    pie_chart = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    buffer.close()
-    plt.close()
+    pie_chart = _figure_to_base64(fig)
+    plt.close(fig)
 
-    # Descriptive comments/advice
-    if total_salaries > total_expenditures:
+    if total_salaries_float > total_expenditures_float:
         comments = (
-            f"Salaries constitute the majority of expenses in the {current_session.name} session. "
-            "Ensure salary expenses are sustainable, and consider strategies to optimize other expenditures."
+            f"Salaries dominate expenses in {current_session.name}. "
+            "Consider optimizing payroll or increasing revenue streams."
         )
-    elif total_expenditures > total_salaries:
+    elif total_expenditures_float > total_salaries_float:
         comments = (
-            f"Expenditures other than salaries are the highest in the {current_session.name} session. "
-            "Review spending categories for potential cost-cutting opportunities without compromising operational efficiency."
+            f"Non-salary expenditures dominate {current_session.name}. "
+            "Explore cost-saving measures in operations and supplies."
         )
     else:
         comments = (
-            f"Salaries and other expenditures are balanced in the {current_session.name} session, "
-            "indicating efficient expense management. Continue monitoring to maintain financial stability."
+            f"Salaries and other expenses are balanced in {current_session.name}. "
+            "Maintain this harmony, but stay alert for cost overruns."
         )
 
     return pie_chart, total_salaries, total_expenditures, overall_total, comments
 
-import matplotlib.pyplot as plt
-import numpy as np
-from io import BytesIO
-import base64
-from django.db.models import Sum
-from apps.finance.models import Receipt, StudentUniform, SalaryInvoice
-from expenditures.models import ExpenditureInvoice
-from apps.corecode.models import AcademicSession
 
-def draw_linear_regression_graph():
-    """
-    Draws a linear regression graph for the school's balance trends.
-    Returns:
-        - Linear regression graph (base64 encoded).
-        - Historical balance data.
-        - Predicted profit for the next session.
-        - Predicted expenses for the next session.
-        - Predicted balance for the next session.
-        - Regression comments and advice.
-    """
-    from apps.finance.models import Receipt, StudentUniform, SalaryInvoice
-    from expenditures.models import ExpenditureInvoice
-    from apps.corecode.models import AcademicSession
-    import matplotlib.pyplot as plt
-    from io import BytesIO
-    import base64
-    import numpy as np
-    import pandas as pd
+############################################
+# Linear Regression Graph for Financial Trends
+############################################
 
-    # Retrieve all sessions
+def draw_linear_regression_graph() -> Tuple[
+    Optional[str],
+    List[Tuple[str, float, float, float]],
+    float,
+    float,
+    float,
+    str
+]:
+    """
+    Draws a linear regression graph for the school's balance trends across sessions.
+    Returns a regression graph (base64), balance data, predicted profit, predicted expenses, predicted balance, and comments.
+    """
     sessions = AcademicSession.objects.all().order_by('id')
-
     if not sessions.exists():
-        return None, [], 0, 0, 0, "No session data available for analysis."
+        return None, [], 0, 0, 0, "No session data available."
 
-    balance_data = []  # Store (session_name, balance) for each session
-
+    balance_data = []
     for session in sessions:
-        # Calculate total income for the session
-        total_income_receipts = (
-            Receipt.objects.filter(invoice__session=session).aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
-        )
-        total_income_uniforms = (
-            StudentUniform.objects.filter(session=session).aggregate(Sum('amount'))['amount__sum'] or 0
-        )
-        total_income = float(total_income_receipts) + float(total_income_uniforms)
+        total_receipts = Receipt.objects.filter(invoice__session=session).aggregate(sum=Sum('amount_paid'))['sum'] or 0
+        total_uniforms = StudentUniform.objects.filter(session=session).aggregate(sum=Sum('amount'))['sum'] or 0
+        total_income = float(total_receipts) + float(total_uniforms)
 
-        # Calculate total expenses for the session
-        total_expenses_salaries = (
-            SalaryInvoice.objects.filter(session=session).aggregate(Sum('total_given_salary'))['total_given_salary__sum'] or 0
-        )
-        total_expenses_invoices = (
-            ExpenditureInvoice.objects.filter(session=session).aggregate(Sum('initial_balance'))['initial_balance__sum'] or 0
-        )
-        total_expenses = float(total_expenses_salaries) + float(total_expenses_invoices)
+        total_salaries = SalaryInvoice.objects.filter(session=session).aggregate(sum=Sum('total_given_salary'))['sum'] or 0
+        total_expenditure_invoices = ExpenditureInvoice.objects.filter(session=session).aggregate(sum=Sum('initial_balance'))['sum'] or 0
+        total_expenses = float(total_salaries) + float(total_expenditure_invoices)
 
-        # Calculate balance
         balance = total_income - total_expenses
-
-        # Add data only if there is actual profit or expenses data
         if total_income > 0 or total_expenses > 0:
             balance_data.append((session.name, balance, total_income, total_expenses))
 
     if not balance_data:
-        return None, [], 0, 0, 0, "No data available for sessions with recorded transactions."
+        return None, [], 0, 0, 0, "No financial data found in any sessions."
 
-    # Handle single-session case
     if len(balance_data) == 1:
-        session_name, balance, total_income, total_expenses = balance_data[0]
-        predicted_profit = total_income
-        predicted_expenses = total_expenses
+        session_name, balance, profit, expenses = balance_data[0]
+        predicted_profit = profit
+        predicted_expenses = expenses
         predicted_balance = balance
 
-        # Plot graph for single session
-        plt.figure(figsize=(8, 5))
-        plt.scatter([session_name], [balance], color='blue', label='Actual Balance', zorder=5)
-        plt.axhline(y=balance, color='red', linestyle='--', label='Flat Trend (slope=0)', zorder=4)
-        plt.title('Balance Trends Across Sessions', fontsize=14, fontweight='bold')
-        plt.xlabel('Session')
-        plt.ylabel('Balance (TZS)')
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.scatter([session_name], [balance], color='blue', label='Actual Balance')
+        ax.axhline(y=balance, color='red', linestyle='--', label='Flat Trend')
+        ax.set_title('Balance Trends Across Sessions', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Session')
+        ax.set_ylabel('Balance (TZS)')
+        ax.legend()
+        ax.grid(True)
+        fig.tight_layout()
 
-        # Convert graph to base64
-        buffer = BytesIO()
-        plt.savefig(buffer, format='png')
-        buffer.seek(0)
-        regression_graph = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        buffer.close()
-        plt.close()
+        regression_graph = _figure_to_base64(fig)
+        plt.close(fig)
 
         regression_comments = (
-            f"Only one session of data available ({session_name}). "
-            f"The current balance is TZS {balance:,.2f}, with a total profit of TZS {predicted_profit:,.2f} "
-            f"and total expenses of TZS {predicted_expenses:,.2f}. The trend is flat (slope = 0)."
+            f"Only one session ({session_name}) of data. Current balance: {balance:,.2f} TZS. "
+            "No trend can be established yet."
         )
         return regression_graph, balance_data, predicted_profit, predicted_expenses, predicted_balance, regression_comments
 
-    # Prepare data for regression
     df = pd.DataFrame(balance_data, columns=['Session', 'Balance', 'Profit', 'Expenses'])
     df['Session_Number'] = range(1, len(df) + 1)
+    df['Balance'] = df['Balance'].astype(float)
+    df['Profit'] = df['Profit'].astype(float)
+    df['Expenses'] = df['Expenses'].astype(float)
 
-    # Linear regression calculation
-    x = df['Session_Number']
-    y = df['Balance']
-    coefficients = np.polyfit(x, y, 1)
-    regression_line = np.poly1d(coefficients)
+    x = df['Session_Number'].values.reshape(-1, 1)
+    y = df['Balance'].values.reshape(-1, 1)
 
-    # Predict values for the next session
+    model, _ = use_advanced_model_if_possible(x, y)
+    slope = model.predict([[len(df)]])[0] - model.predict([[len(df)-1]])[0]
+
     next_session_number = len(df) + 1
-    predicted_balance = regression_line(next_session_number)
-    predicted_profit = df['Profit'].iloc[-1]  # Use profit from the last session
-    predicted_expenses = df['Expenses'].iloc[-1]  # Use expenses from the last session
+    predicted_balance = float(model.predict([[next_session_number]])[0][0])
+    predicted_profit = df['Profit'].iloc[-1]
+    predicted_expenses = df['Expenses'].iloc[-1]
 
-    # Plot the regression graph
-    plt.figure(figsize=(12, 6))
-    plt.scatter(df['Session'], df['Balance'], color='blue', label='Actual Balances', zorder=5)
-    plt.plot(df['Session'], regression_line(df['Session_Number']), color='red', linestyle='--', label='Trend Line', zorder=4)
-    plt.axhline(0, color='gray', linewidth=1, linestyle='--', zorder=1)
-    plt.title('Balance Trends Across Sessions', fontsize=16, fontweight='bold')
-    plt.xlabel('Session')
-    plt.ylabel('Balance (TZS)')
-    plt.xticks(rotation=45)
-    plt.legend()
-    plt.tight_layout()
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.scatter(df['Session'], df['Balance'], color='blue', label='Actual Balances')
+    ax.plot(df['Session'], model.predict(x), color='red', linestyle='--', label='Trend Line')
+    ax.axhline(0, color='gray', linewidth=1, linestyle='--')
+    ax.set_title('Balance Trends Across Sessions', fontsize=16, fontweight='bold')
+    ax.set_xlabel('Session')
+    ax.set_ylabel('Balance (TZS)')
+    ax.tick_params(axis='x', rotation=45)
+    ax.legend()
+    fig.tight_layout()
 
-    # Convert graph to base64
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    regression_graph = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    buffer.close()
-    plt.close()
+    regression_graph = _figure_to_base64(fig)
+    plt.close(fig)
 
-    # Analyze slope for advice
-    slope = coefficients[0]
-    if slope > 0:
+    slope_value = float(slope)
+    if slope_value > 0:
         regression_comments = (
-            f"The balance trend shows a positive slope ({slope:.2f}). The school is improving its financial health. "
-            "Continue optimizing income and managing expenses for sustainable growth."
+            f"Positive trend ({slope_value:.2f}/session): Financial health is improving. "
+            "Maintain strategies for revenue growth and cost control."
         )
-    elif slope < 0:
+    elif slope_value < 0:
         regression_comments = (
-            f"The balance trend shows a negative slope ({slope:.2f}). Immediate action is needed to reverse this trend. "
-            "Consider reducing unnecessary expenses and exploring additional income streams."
+            f"Negative trend ({slope_value:.2f}/session): Financial health is declining. "
+            "Consider immediate measures to cut costs and boost income."
         )
     else:
         regression_comments = (
-            f"The balance trend shows no slope ({slope:.2f}). The school's financial position is stable. "
-            "Maintain this stability while exploring opportunities for improvement."
+            "Stable trend: No significant change. Aim for improvement through careful planning."
         )
 
     return regression_graph, balance_data, predicted_profit, predicted_expenses, predicted_balance, regression_comments
+

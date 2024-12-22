@@ -1,59 +1,236 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expenditure Detail</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <style>
-        /* Add your custom CSS styles here */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            padding: 20px;
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+Expenditure Detail
+{% endblock title %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+    :root {
+        --primary-color: #e67e22; /* Carrot color */
+    }
+
+    html, body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #e1f5fe, #b3e5fc, #81d4fa);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        min-height: 100vh;
+        margin:0;
+        padding:0;
+        color:#333;
+        transition:background-color 0.5s, color 0.5s;
+    }
+
+    @keyframes gradientBG {
+        0% { background-position:0% 50%; }
+        50% { background-position:100% 50%; }
+        100% { background-position:0% 50%; }
+    }
+
+    [data-theme="dark"] {
+        color:#fff;
+    }
+
+    .container {
+        max-width: 1200px !important;
+    }
+
+    .page-header {
+        text-align: center;
+        padding:40px 20px;
+        position:relative;
+        margin-bottom:30px;
+    }
+
+    .page-header h1 {
+        font-weight:600;
+        color:#ff4081;
+        font-size:2rem;
+        display:inline-flex;
+        align-items:center;
+        gap:0.5rem;
+        animation: fadeInDown 0.8s ease forwards;
+        opacity:0;
+        transform:translateY(-20px);
+    }
+
+    h1::before {
+        content:"💸";
+    }
+
+    @keyframes fadeInDown {
+        to { opacity:1; transform:translateY(0); }
+    }
+
+    .top-actions {
+        position:absolute;
+        top:20px;
+        right:20px;
+        display:flex;
+        align-items:center;
+        gap:15px;
+        z-index:1000;
+    }
+
+    .top-actions a, .top-actions div {
+        cursor:pointer;
+        font-size:1.5em;
+        color:var(--primary-color);
+        transition:transform 0.3s,color 0.3s;
+        font-weight:600;
+        text-decoration:none;
+    }
+
+    .top-actions a:hover, .top-actions div:hover {
+        transform:scale(1.1);
+        color:#d35400;
+    }
+
+    [data-theme="dark"] .top-actions a, [data-theme="dark"] .top-actions div {
+        color:#ffcc00;
+    }
+
+    [data-theme="dark"] .top-actions a:hover, [data-theme="dark"] .top-actions div:hover {
+        color:#ffc107;
+    }
+
+    .card {
+        border:none; 
+        border-radius:20px; 
+        overflow:hidden;
+        box-shadow:0 2px 15px rgba(0,0,0,0.05);
+        background:#fff;
+        margin-bottom:30px;
+        animation: fadeInCard 0.8s ease forwards;
+        opacity:0;
+        transform:translateY(20px);
+    }
+
+    @keyframes fadeInCard {
+        to {
+            opacity:1;
+            transform:translateY(0);
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #fff;
-            border-radius: 5px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] .card {
+        background:#2c2c2c;
+        color:#fff;
+    }
+
+    .card-header {
+        border-radius:20px 20px 0 0;
+        background: var(--primary-color);
+        color:#fff;
+        padding:20px;
+        font-size:1.2rem;
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+    }
+
+    .card-body {
+        padding:20px;
+    }
+
+    table {
+        border-collapse: collapse;
+        width:100%;
+        margin-bottom:20px;
+        border-radius:10px;
+        overflow:hidden;
+    }
+
+    thead tr {
+        background-color: var(--primary-color);
+        color:#fff;
+    }
+
+    [data-theme="dark"] thead tr {
+        background-color:#3a3a3a;
+    }
+
+    th, td {
+        border:none;
+        padding:10px;
+        font-size:0.95rem;
+    }
+
+    tbody tr {
+        border-bottom:1px solid #ccc;
+        transition:background 0.3s;
+    }
+
+    [data-theme="dark"] tbody tr {
+        border-bottom:1px solid #555;
+    }
+
+    tbody tr:hover {
+        background:rgba(0,0,0,0.05);
+    }
+
+    [data-theme="dark"] tbody tr:hover {
+        background:rgba(255,255,255,0.1);
+    }
+
+    th {
+        font-weight:600;
+        text-transform:uppercase;
+    }
+
+    .attachment-link {
+        color:var(--primary-color);
+        font-weight:600;
+        text-decoration:none;
+        transition:color 0.3s;
+    }
+
+    .attachment-link:hover {
+        color:#d35400;
+        text-decoration:underline;
+    }
+
+    @media(max-width:600px) {
+        .page-header h1 {
+            font-size:1.5rem;
         }
-        h1 {
-            margin-bottom: 20px;
-            color: hwb(210 72% 21%);
+        th,td {
+            font-size:0.85rem;
         }
-        p {
-            margin-bottom: 10px;
-        }
-        strong {
-            font-weight: bold;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-bottom: 20px; /* Add margin between tables */
-        }
-        th, td {
-            border: 1px solid #add8e6;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: teal;
-            color: white;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
+    }
+</style>
+
+<div class="container my-5">
+    <div class="page-header">
         <h1>Expenditure Detail</h1>
-        <!-- Iterate over each item and display its details -->
-        {% for item, expenditures in item_expenditures.items %}
-            <h2>{{ item }}</h2> <!-- Display item name as a heading -->
+        <div class="top-actions">
+            <!-- Back to Category List -->
+            <a href="{% url 'category_list' %}" title="Back to Categories">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <!-- Home/dash link -->
+            <a href="{% url 'select_link' %}" title="Return to Dashboard">
+                <i class="fas fa-home"></i>
+            </a>
+            <!-- Theme toggle -->
+            <div class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                <i class="fas fa-sun"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Iterate over each item and display its details -->
+    {% for item, expenditures in item_expenditures.items %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-box-open"></i> {{ item }}
+        </div>
+        <div class="card-body">
             <table>
                 <thead>
                     <tr>
@@ -65,35 +242,61 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Iterate over each expenditure for the current item -->
-                    {% for expenditure in expenditures %}
-                        <tr>
-                            <td>{{ expenditure.amount }}</td>
-                            <td>{{ expenditure.quantity }}</td>
-                            <td>{{ expenditure.date }}</td>
-                            <td>{{ expenditure.description }}</td>
-                            <td>
-                                {% if expenditure.attachment %}
-                                    {% if expenditure.attachment.name|lower|slice:'-4:' == '.jpg' or expenditure.attachment.name|lower|slice:'-5:' == '.jpeg' or expenditure.attachment.name|lower|slice:'-4:' == '.png' %}
-                                        <img src="{{ expenditure.attachment.url }}" alt="Attachment">
-                                    {% elif expenditure.attachment.name|lower|slice:'-4:' == '.pdf' %}
-                                        <a href="{{ expenditure.attachment.url }}">View PDF</a>
-                                    {% elif expenditure.attachment.name|lower|slice:'-4:' == '.doc' or expenditure.attachment.name|lower|slice:'-5:' == '.docx' %}
-                                        <a href="{{ expenditure.attachment.url }}">View Word Document</a>
+                {% for expenditure in expenditures %}
+                    <tr>
+                        <td>{{ expenditure.amount }}</td>
+                        <td>{{ expenditure.quantity }}</td>
+                        <td>{{ expenditure.date }}</td>
+                        <td>{{ expenditure.description }}</td>
+                        <td>
+                            {% if expenditure.attachment %}
+                                {% with ext=expenditure.attachment.name|lower %}
+                                    {% if ext.endswith('.jpg') or ext.endswith('.jpeg') or ext.endswith('.png') %}
+                                        <a href="{{ expenditure.attachment.url }}" class="attachment-link" target="_blank">🔗 View Image</a>
+                                    {% elif ext.endswith('.pdf') %}
+                                        <a href="{{ expenditure.attachment.url }}" class="attachment-link" target="_blank">🔗 View PDF</a>
+                                    {% elif ext.endswith('.doc') or ext.endswith('.docx') %}
+                                        <a href="{{ expenditure.attachment.url }}" class="attachment-link" target="_blank">🔗 View Document</a>
                                     {% else %}
-                                        <a href="{{ expenditure.attachment.url }}">Download Attachment</a>
+                                        <a href="{{ expenditure.attachment.url }}" class="attachment-link" target="_blank">🔗 Download Attachment</a>
                                     {% endif %}
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
+                                {% endwith %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
                 </tbody>
             </table>
-        {% endfor %}
+        </div>
     </div>
-    <!-- Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html>
+    {% endfor %}
+</div>
+
+<script>
+    // Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const htmlElement = document.documentElement;
+
+    function toggleTheme() {
+        const currentTheme = htmlElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        htmlElement.setAttribute('data-theme', newTheme);
+        themeToggle.innerHTML = newTheme === 'dark' 
+            ? '<i class="fas fa-moon"></i>' 
+            : '<i class="fas fa-sun"></i>';
+        localStorage.setItem('theme', newTheme);
+    }
+
+    themeToggle.addEventListener('click', toggleTheme);
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        htmlElement.setAttribute('data-theme', savedTheme);
+        themeToggle.innerHTML = savedTheme === 'dark'
+            ? '<i class="fas fa-moon"></i>'
+            : '<i class="fas fa-sun"></i>';
+    }
+</script>
+{% endblock %}

@@ -10,127 +10,338 @@ Add New Invoice
 {% endblock title %}
 
 {% block content %}
-<div class="container mt-4">
-  <div class="card shadow-lg">
-    <div class="card-header bg-primary text-white">
-      <h4 class="mb-0">{% if object %}Update Invoice{% else %}Add New Invoice{% endif %}</h4>
-    </div>
-    <div class="card-body">
-      <form method="POST">
-        {% csrf_token %}
-        <div class="row">
-          <div class="col-md-6">
-            <!-- Search input field for student -->
-            <div class="form-group mb-3">
-              <label for="student-search" class="form-label">Search Student:</label>
-              <input type="text" id="student-search" class="form-control" placeholder="Enter student name">
-            </div>
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(to bottom right, #fdfbfb, #f2f2f2);
+        margin: 0;
+        padding: 20px;
+        color: #333;
+    }
 
-            {% for field in form %}
-            <div class="form-group mb-3">
-              <label for="{{ field.auto_id }}" class="form-label">
-                {{ field.label }}
-                {% if field.errors %}
-                <small class="text-danger">{{ field.errors|join:", " }}</small>
+    .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    .col-md-6, .col-md-5, .col-md-7 {
+        box-sizing: border-box;
+        float:left;
+        padding:0 10px;
+    }
+
+    .col-md-7 { width:58.3333%; }
+    .col-md-5 { width:41.6667%; }
+    .col-md-6 { width:50%; }
+
+    @media(max-width:600px) {
+        .col-md-7, .col-md-5, .col-md-6 {
+            width:100%;
+            padding:0;
+            margin-bottom:20px;
+        }
+    }
+
+    .modern-card {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+        margin-bottom: 20px;
+        animation: fadeIn 1s ease-in-out;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity:0; }
+        to { opacity:1; }
+    }
+
+    .modern-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .modern-card-header {
+        background: linear-gradient(135deg, #e67e22, #d46b11);
+        color: #fff;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .modern-card-header h4 {
+        margin: 0;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .card-body {
+        padding:20px;
+        position: relative;
+    }
+
+    .form-group {
+        margin-bottom: 1.2rem;
+        position: relative;
+        transition: transform 0.3s;
+    }
+
+    .form-group:hover {
+        transform: scale(1.01);
+    }
+
+    .form-label {
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+        margin-bottom:0.4rem;
+        color:#333;
+        font-size:1rem;
+    }
+
+    .form-label i {
+        color: #e67e22;
+        font-size:1.1rem;
+    }
+
+    /* Emojis in labels and instructions */
+    .emoji {
+        color:#ff9900;
+        font-size:1.1rem;
+        vertical-align:middle;
+        margin-right:0.3rem;
+    }
+
+    .form-control {
+        border-radius: 30px;
+        border: 1px solid #ccc;
+        font-size: 0.9rem;
+        color: #333;
+        width: 100%;
+        padding: 0.6rem 1rem;
+        background: #fff;
+        transition: box-shadow 0.3s, border-color 0.3s;
+    }
+
+    .form-control:focus {
+        outline:none;
+        border-color: #e67e22;
+        box-shadow:0 0 0 0.2rem rgba(230,126,34,0.2);
+    }
+
+    .form-text {
+        font-size:0.8rem;
+        color:#666;
+        margin-top:0.3rem;
+        display:block;
+        padding-left:1.5rem;
+        position:relative;
+    }
+
+    .form-text::before {
+        content:"💡";
+        position:absolute;
+        left:0;
+        top:0;
+        color:#e67e22;
+        font-size:1rem;
+        margin-right:0.2rem;
+    }
+
+    .btn {
+        border-radius:20px;
+        font-weight:600;
+        border:none;
+        padding:10px 16px;
+        font-size:0.9rem;
+        color:#fff;
+        display:inline-flex;
+        align-items:center;
+        gap:0.5rem;
+        cursor:pointer;
+        background: linear-gradient(135deg, #e67e22, #d46b11);
+        transition:background 0.3s,transform 0.3s;
+    }
+
+    .btn:hover {
+        background: linear-gradient(135deg, #cf650f, #b8550c);
+        transform: translateY(-2px);
+    }
+
+    /* Invoice details card */
+    .invoice-card {
+        margin-top:20px;
+        background: #fff;
+        border-radius:20px;
+        box-shadow:0 4px 15px rgba(0,0,0,0.05);
+        animation:fadeIn 1s ease-in-out;
+        position:relative;
+    }
+
+    .invoice-header {
+        background: linear-gradient(135deg, #20c997, #10866a);
+        color:#fff;
+        padding:15px;
+        border-radius:20px 20px 0 0;
+        font-size:1rem;
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+    }
+
+    .invoice-header i {
+        font-size:1.2rem;
+    }
+
+    .invoice-body {
+        padding:15px;
+        font-size:0.9rem;
+        color:#333;
+    }
+
+    .invoice-body h5 {
+        font-size:1rem;
+        font-weight:600;
+        margin-bottom:10px;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+        color:#333;
+    }
+
+    .invoice-body ul {
+        list-style:none;
+        padding:0;
+        margin:0;
+    }
+
+    .invoice-body ul li {
+        margin:5px 0;
+        position:relative;
+        padding-left:20px;
+    }
+
+    .invoice-body ul li::before {
+        content:"🍊";
+        position:absolute;
+        left:0;
+        top:0;
+        font-size:1rem;
+    }
+
+    .text-end {
+        text-align:end;
+    }
+</style>
+
+<div class="container mt-4" data-aos="fade-up">
+    <div class="modern-card">
+        <div class="modern-card-header">
+            <h4>
+                {% if object %}
+                <i class="fas fa-file-invoice-dollar"></i> <span class="emoji">📝</span>Update Invoice
+                {% else %}
+                <i class="fas fa-file-invoice-dollar"></i> <span class="emoji">🆕</span>Add New Invoice
                 {% endif %}
-              </label>
-              {% if field.name == "student" %}
-              {{ field|add_class:"form-control"|attr:"required" }}
-              {% else %}
-              {{ field|add_class:"form-control" }}
-              {% endif %}
-              {% if field.help_text %}
-              <small class="form-text text-muted">{{ field.help_text|safe }}</small>
-              {% endif %}
-            </div>
-            {% endfor %}
-          </div>
-          <div class="col-md-6">
-            <div class="card border-primary mb-3">
-              <div class="card-header bg-info text-white text-center">FEE STRUCTURE</div>
-              <div class="card-body">
-                {{ items.management_form }}
+            </h4>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
                 <div class="row">
-                  <div class="col"><strong>Fee Type</strong></div>
-                  <div class="col"><strong>Amount</strong></div>
-                </div>
-                {% for item in items %}
-                <div class="form-group row mb-3">
-                  {{ item.id }}
-                  <div class="col">{{ item.description|add_class:"form-control" }}</div>
-                  <div class="col">{{ item.amount|add_class:"form-control" }}</div>
-                </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-        </div>
+                    <div class="col-md-6">
+                        {% for field in form %}
+                            {% if field.name != 'item_description' and field.name != 'item_amount' and field.name != 'student' and field.name != 'class_for' %}
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {% if field.name == 'session' %}<span class="emoji">📅</span>{% endif %}
+                                    {% if field.name == 'installment' %}<span class="emoji">📜</span>{% endif %}
+                                    {% if field.name == 'balance_from_previous_install' %}<span class="emoji">💰</span>{% endif %}
+                                    {% if field.name == 'status' %}<span class="emoji">🔄</span>{% endif %}
+                                    {{ field.label }}
+                                    {% if field.errors %}
+                                    <small class="text-danger">{{ field.errors|join:", " }}</small>
+                                    {% endif %}
+                                </label>
+                                {{ field|add_class:"form-control" }}
+                                {% if field.help_text %}
+                                <small class="form-text">{{ field.help_text|safe }}</small>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
 
-        {% if object %}
-        <h4>RECEIPTS</h4>
-        <table class="table table-sm table-bordered">
-          {{ receipts.management_form }}
-          <thead class="thead-light">
-            <tr>
-              <th>Amount Paid</th>
-              <th>Date Paid</th>
-              <th>Comment</th>
-              <th>Payment Method</th>
-              <th><i class="fa fa-trash"></i></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for receipt in receipts %}
-            {% for hidden in receipt.hidden_fields %}
-            {{ hidden }}
-            {% endfor %}
-            <tr>
-              {% for field in receipt.visible_fields %}
-              <td>{{ field|add_class:"form-control form-control-sm" }}</td>
-              {% endfor %}
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% endif %}
+                        <!-- Student field -->
+                        <div class="form-group mb-3">
+                            <label class="form-label"><span class="emoji">👨‍🎓</span> Student</label>
+                            {{ form.student|add_class:"form-control" }}
+                            <small class="form-text">Select the student associated with this invoice.</small>
+                        </div>
 
-        <div class="text-end">
-          <button type="submit" class="btn btn-primary">{% if object %}Update Record{% else %}Add New Invoice{% endif %}</button>
+                        <!-- class_for field -->
+                        <div class="form-group mb-3">
+                            <label class="form-label"><span class="emoji">🏫</span> Class for</label>
+                            {{ form.class_for|add_class:"form-control" }}
+                            <small class="form-text">Choose the class relevant to this invoice.</small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <!-- Invoice Item Description -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.item_description.id_for_label }}" class="form-label">
+                                <span class="emoji">🏷️</span> Item Description
+                                <i class="fas fa-tag"></i>
+                            </label>
+                            {{ form.item_description|add_class:"form-control" }}
+                            <small class="form-text">E.g. Tuition Fee, Uniform Payment, etc.</small>
+                        </div>
+
+                        <!-- Invoice Item Amount -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.item_amount.id_for_label }}" class="form-label">
+                                <span class="emoji">💲</span> Item Amount
+                                <i class="fas fa-coins"></i>
+                            </label>
+                            {{ form.item_amount|add_class:"form-control" }}
+                            <small class="form-text">E.g. 5000 (no currency symbol)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end" style="margin-top:20px;">
+                    <button type="submit" class="btn">
+                        {% if object %}<i class="fas fa-save"></i> Update Invoice{% else %}<span class="emoji">🆕</span> <i class="fas fa-plus"></i> Create Invoice{% endif %}
+                    </button>
+                </div>
+            </form>
         </div>
-      </form>
     </div>
-  </div>
 </div>
+
 <hr>
 {% endblock content %}
 
 {% block morejs %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
-  $(document).ready(function() {
-    $('#student-search').on('input', function() {
-      var searchText = $(this).val().toLowerCase();
-      $('#id_student option').each(function() {
-        var studentName = $(this).text().toLowerCase();
-        if (studentName.includes(searchText)) {
-          $(this).show();
-        } else {
-          $(this).hide();
-        }
-      });
-    });
-
-    const studentData = {{ student_data|safe }};
-    const currentSession = {{ current_session }};
-    const currentInstallment = {{ current_installment }};
-    
-    $('#id_student').on('change', function() {
-      const selectedStudentId = $(this).val();
-      const selectedStudentClass = studentData[selectedStudentId];
-      
-      $('#id_class_for').val(selectedStudentClass);
-      $('#id_session').val(currentSession);
-      $('#id_installment').val(currentInstallment);
-    });
+  AOS.init({
+    duration: 1000,
+    once: true,
   });
 </script>
 {% endblock morejs %}

@@ -1,68 +1,272 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load humanize %}
+{% load static widget_tweaks %}
+
+{% block title %}
+Expenditure List
+{% endblock title %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expenditure List</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <style>
-        /* Custom CSS styles */
-        .container {
-            overflow-y: auto;
-            max-height: 80vh;
-            padding: 20px;
-        }
-        /* Blue color for total general amount */
-        .total-general-amount {
-            color: blue;
-            font-size: smaller; /* Reduce text size */
-        }
-        /* Red color for total initial balance */
-        .total-initial-balance {
-            color: red;
-            font-size: smaller; /* Reduce text size */
-        }
-        .print-btn {
-            margin-top: 10px;
-        }
-        table {
-            border-collapse: collapse;
-            width: 80%; /* Reduced table width */
-        }
+<style>
+    :root {
+        --primary-color: #e67e22;
+    }
 
-        th, td {
-            border: 1px solid lightblue; /* Table lines light blue color */
-            padding: 7px; /* Reduce table cell padding */
-            text-align: left;
-            font-size: smaller; /* Reduce font size */
-        }
-        
-        th {
-            background-color: #ffffff; /* Header background color */
-            color: black; /* Header text color */
-        }
-        tbody tr:nth-child(odd) {
-            background-color: hsl(0, 0%, 95%); /* Table row background color */
-        }
-        .category-heading {
-            background-color: teal; /* Teal background color for category names */
-            color: white; /* White text color for category names */
-            padding: 2px; /* Padding for category names */
-            border-radius: 2px; /* Rounded corners for category names */
-            margin-top: 8px; /* Adjust margin top for category names */
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Total balance, expenditure amount, and reminder balance -->
-        <table class="table table-bordered mt-4">
+    body {
+        font-family: Arial, sans-serif;
+        background:#fdfbfb;
+        color:#333;
+    }
+
+    .container {
+        overflow-y: auto;
+        max-height: 80vh;
+        padding: 20px;
+        position:relative;
+    }
+
+    h2 {
+        font-size:1.4rem;
+        font-weight:600;
+        margin-bottom:1rem;
+        color:#333;
+    }
+
+    .icon-bar {
+        position:absolute;
+        top:20px;
+        right:20px;
+        background:#fff;
+        border-radius:50px;
+        box-shadow:0 2px 10px rgba(0,0,0,0.05);
+        display:flex;
+        align-items:center;
+        gap:15px;
+        padding:5px 10px;
+        z-index:1000;
+    }
+
+    [data-theme="dark"] .icon-bar {
+        background:#2c2c2c;
+    }
+
+    .icon-bar a, .icon-bar div {
+        color:var(--primary-color);
+        font-size:1.3rem;
+        text-decoration:none;
+        transition:transform 0.3s, color 0.3s;
+    }
+
+    .icon-bar a:hover, .icon-bar div:hover {
+        transform:scale(1.1);
+        color:#d35400;
+    }
+
+    [data-theme="dark"] .icon-bar a, [data-theme="dark"] .icon-bar div {
+        color:#ffcc00;
+    }
+
+    [data-theme="dark"] .icon-bar a:hover, [data-theme="dark"] .icon-bar div:hover {
+        color:#ffc107;
+    }
+
+    .table-container {
+        background:#fff;
+        border-radius:8px;
+        padding:20px;
+        box-shadow:0 2px 15px rgba(0,0,0,0.05);
+        margin-bottom:30px;
+        transition:transform 0.3s;
+    }
+
+    .table-container:hover {
+        transform:translateY(-2px);
+    }
+
+    [data-theme="dark"] .table-container {
+        background:#2c2c2c;
+        color:#fff;
+    }
+
+    .table {
+        width:100%;
+        border-collapse:separate;
+        border-spacing:0;
+    }
+
+    thead tr {
+        background: #b2ebf2; /* Soft pastel teal */
+        color:#333;
+        font-weight:600;
+        text-transform:none;
+    }
+
+    thead th {
+        padding:10px;
+        font-size:0.9rem;
+        border:none;
+        color:var(--primary-color);
+        text-decoration:none; /* no underline now */
+        white-space:nowrap;
+    }
+
+    thead th:nth-child(1)::before { content:"🔢 "; }
+    thead th:nth-child(2)::before { content:"🗓 "; }
+    thead th:nth-child(3)::before { content:"🏷 "; }
+    thead th:nth-child(4)::before { content:"#️⃣ "; }
+    thead th:nth-child(5)::before { content:"💲 "; }
+    thead th:nth-child(6)::before { content:"💬 "; }
+    thead th:nth-child(7)::before { content:"📎 "; }
+
+    tbody tr {
+        border-bottom:1px solid #ddd;
+        transition:background 0.3s;
+        cursor:pointer;
+        position:relative;
+        overflow:hidden;
+    }
+
+    tbody tr:hover {
+        background:rgba(0,0,0,0.03);
+    }
+
+    td {
+        color:#333;
+        font-size:0.85rem;
+        vertical-align:middle;
+        padding:10px;
+        white-space:nowrap;
+    }
+
+    /* Add ripple effect on row click */
+    tbody tr:active::after {
+        content:"";
+        position:absolute;
+        left:50%; top:50%;
+        transform:translate(-50%,-50%);
+        width:5px; height:5px;
+        background: var(--primary-color);
+        border-radius:50%;
+        animation:ripple 0.6s linear;
+        pointer-events:none;
+    }
+
+    @keyframes ripple {
+        0% { width:5px; height:5px; opacity:0.5; }
+        100% { width:200px; height:200px; opacity:0; }
+    }
+
+    .total-general-amount {
+        color: blue;
+        font-size: 0.85rem;
+    }
+
+    .total-initial-balance {
+        color: red;
+        font-size: 0.85rem; 
+    }
+
+    .reminder-balance {
+        font-size:0.85rem;
+        font-weight:600;
+        color:var(--primary-color);
+    }
+
+    .print-btn {
+        background: var(--primary-color);
+        color:#fff;
+        border-radius:20px;
+        font-weight:600;
+        padding:8px 16px;
+        border:none;
+        font-size:0.85rem;
+        cursor:pointer;
+        display:inline-flex;
+        align-items:center;
+        gap:0.3rem;
+        transition:background 0.3s,transform 0.3s;
+        margin-top:10px;
+    }
+
+    .print-btn i {
+        font-size:1rem;
+    }
+
+    .print-btn:hover {
+        background:#d35400;
+        transform:translateY(-1px);
+    }
+
+    .attachment-link {
+        color:var(--primary-color);
+        font-weight:600;
+        text-decoration:none;
+        font-size:0.8rem;
+        transition:color 0.3s;
+    }
+
+    .attachment-link:hover {
+        color:#d35400;
+        text-decoration:underline;
+    }
+
+    .category-heading {
+        font-size:1rem;
+        font-weight:bold;
+        color:#333;
+        margin:1.5rem 0 0.5rem;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+    }
+
+    .category-heading::before {
+        content:"📂";
+        font-size:1.2rem;
+    }
+
+    .category-heading .total-amount {
+        font-weight:600;
+        color:var(--primary-color);
+        margin-left:0.3rem;
+    }
+
+    .search-form .form-control {
+        font-size:0.85rem;
+        border-radius:20px;
+    }
+
+    .search-form .btn {
+        border-radius:20px;
+        font-size:0.85rem;
+        font-weight:600;
+        transition:transform 0.3s;
+    }
+
+    .search-form .btn:hover {
+        transform:translateY(-1px);
+    }
+</style>
+
+<div class="container my-5">
+    <!-- Icon bar with back, home, theme toggle -->
+    <div class="icon-bar">
+        <a href="{% url 'category_list' %}" title="Back to Categories">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <a href="{% url 'select_link' %}" title="Return to Dashboard">
+            <i class="fas fa-home"></i>
+        </a>
+        <div class="theme-toggle" id="themeToggle" title="Toggle Theme">
+            <i class="fas fa-sun"></i>
+        </div>
+    </div>
+
+    <h2>Expenditure List</h2>
+
+    <!-- Display total balance table -->
+    <div class="table-container" id="summaryContainer">
+        <table class="table">
             <thead>
                 <tr>
                     <th>Total Balance</th>
@@ -84,69 +288,93 @@
                 </tr>
             </tbody>
         </table>
+    </div>
 
-        <!-- Search form -->
-        <form method="GET" class="mb-3">
-            <div class="input-group mb-3">
-                <input type="text" name="search_category" id="search_category" class="form-control" placeholder="Search by category" style="max-width: 200px;">
-                <input type="date" name="search_date" id="search_date" class="form-control" placeholder="Search by date">
-                <input type="month" name="search_month" id="search_month" class="form-control" placeholder="Search by month">
-                <button type="submit" class="btn btn-primary">Search</button>
-            </div>
-        </form>
-        
-        <!-- Display category tables -->
-        {% for category_table in expenditures %}
-            <!-- Display category name and total amount -->
-            <h2 class="category-heading">{{ category_table.category_name }} - Total Amount: <span class="total-amount">{{ category_table.total_amount|intcomma }}</span></h2>
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>S/N</th>
-                            <th>Date</th> <!-- Date field -->
-                            <th>Item Name</th> <!-- Item name field -->
-                            <th>Quantity</th>
-                            <th>Amount</th>
-                            <th>Description</th>
-                            <th>Attachment</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for expenditure in category_table.rows %}
-                            <tr>
-                                <td>{{ forloop.counter }}</td> <!-- S/N field -->
-                                <td>{{ expenditure.date }}</td> <!-- Date field -->
-                                <td>{{ expenditure.item_name }}</td> <!-- Item name field -->
-                                <td>{{ expenditure.quantity }}</td>
-                                <td>{{ expenditure.amount|intcomma }}</td> <!-- Apply intcomma filter to format integer with commas -->
-                                <td>{{ expenditure.description }}</td>
-                                <td>
-                                     
-                                    {% if expenditure.attachment %}
-                                        {% if expenditure.attachment.name|lower|slice:'-4:' == '.jpg' or expenditure.attachment.name|lower|slice:'-5:' == '.jpeg' or expenditure.attachment.name|lower|slice:'-4:' == '.png' %}
-                                             <img src="{{ expenditure.attachment.url }}" alt="Attachment">
-                                        {% elif expenditure.attachment.name|lower|slice:'-4:' == '.pdf' %}
-                                             <a href="{{ expenditure.attachment.url }}" class="download-link">View PDF</a>
-                                        {% elif expenditure.attachment.name|lower|slice:'-4:' == '.doc' or expenditure.attachment.name|lower|slice:'-5:' == '.docx' %}
-                                             <a href="{{ expenditure.attachment.url }}" class="download-link">View Word Document</a>
-                                        {% else %}
-                                             <a href="{{ expenditure.attachment.url }}" class="download-link">Download Attachment</a>
-                                        {% endif %}
+    <!-- Search form -->
+    <form method="GET" class="search-form mb-4 d-flex flex-wrap align-items-center" style="gap:10px;">
+        <input type="text" name="search_category" id="search_category" class="form-control" placeholder="🔍 Category" style="max-width: 150px;">
+        <input type="date" name="search_date" id="search_date" class="form-control" placeholder="📅 Date" style="max-width: 150px;">
+        <input type="month" name="search_month" id="search_month" class="form-control" placeholder="🗓 Month" style="max-width: 150px;">
+        <button type="submit" class="btn btn-primary px-3">Search</button>
+    </form>
+
+    <!-- Display category tables -->
+    {% for category_table in expenditures %}
+        <h2 class="category-heading">{{ category_table.category_name }} - Total Amount:<span class="total-amount"> {{ category_table.total_amount|intcomma }}</span></h2>
+        <div class="table-container category-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>S/N</th>
+                        <th>Date</th>
+                        <th>Item Name</th>
+                        <th>Quantity</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                        <th>Attachment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expenditure in category_table.rows %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ expenditure.date }}</td>
+                        <td>{{ expenditure.item_name }}</td>
+                        <td>{{ expenditure.quantity }}</td>
+                        <td>{{ expenditure.amount|intcomma }}</td>
+                        <td>{{ expenditure.description }}</td>
+                        <td>
+                            {% if expenditure.attachment %}
+                                {% with ext=expenditure.attachment.name|lower %}
+                                    {% if ext|slice:"-4:" == ".jpg" or ext|slice:"-5:" == ".jpeg" or ext|slice:"-4:" == ".png" %}
+                                        <a href="{{ expenditure.attachment.url }}" class="attachment-link" target="_blank">View Image</a>
+                                    {% elif ext|slice:"-4:" == ".pdf" %}
+                                        <a href="{{ expenditure.attachment.url }}" class="attachment-link" target="_blank">View PDF</a>
+                                    {% elif ext|slice:"-4:" == ".doc" or ext|slice:"-5:" == ".docx" %}
+                                        <a href="{{ expenditure.attachment.url }}" class="attachment-link" target="_blank">View Document</a>
                                     {% else %}
-                                        No attachment 
-                                    {%   endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endfor %}
+                                        <a href="{{ expenditure.attachment.url }}" class="attachment-link" target="_blank">Download Attachment</a>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endfor %}
 
-        <!-- Print button -->
-        <button class="btn btn-primary print-btn" onclick="window.print()">Print</button>
-    </div>      
-</body>
-</html>
+    <!-- Print button -->
+    <button class="print-btn" id="printBtn" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+</div>
+
+<script>
+    // Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const htmlElement = document.documentElement;
+    const printBtn = document.getElementById('printBtn');
+
+    function toggleTheme() {
+        const currentTheme = htmlElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        htmlElement.setAttribute('data-theme', newTheme);
+        themeToggle.innerHTML = newTheme === 'dark' 
+            ? '<i class="fas fa-moon"></i>' 
+            : '<i class="fas fa-sun"></i>';
+        localStorage.setItem('theme', newTheme);
+    }
+
+    themeToggle.addEventListener('click', toggleTheme);
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        htmlElement.setAttribute('data-theme', savedTheme);
+        themeToggle.innerHTML = savedTheme === 'dark'
+            ? '<i class="fas fa-moon"></i>'
+            : '<i class="fas fa-sun"></i>';
+    }
+</script>
 {% endblock %}

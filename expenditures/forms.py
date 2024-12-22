@@ -1,5 +1,5 @@
 from django import forms
-from .models import ExpenditureInvoice
+from .models import ExpenditureInvoice, Category
 
 
 class ExpenditureInvoiceForm(forms.ModelForm):
@@ -16,3 +16,11 @@ class ExpenditureInvoiceForm(forms.ModelForm):
         for field_name, field in self.fields.items():
             field.widget.attrs.update({'class': 'form-control'})
 
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+        }

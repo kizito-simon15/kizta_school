@@ -1,118 +1,347 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block content-header %}
-<div class="card-header bg-primary text-white" data-aos="fade-down" data-aos-duration="1000" style="border-radius: 10px;">
-  <div class="card-tools d-flex justify-content-between">
-    <div>
-      <a href="#" class="btn btn-outline-light btn-sm" id="print-button"><i class="fas fa-print"></i> Print</a>
-      <a href="{% url 'staff-update' object.id %}" class="btn btn-outline-light btn-sm">
-        <i class="fas fa-edit"></i> Edit
-      </a>
-      <a href="{% url 'staff-delete' object.id %}" class="btn btn-outline-light btn-sm">
-        <i class="fas fa-times"></i> Delete
-      </a>
-    </div>
-    <button class="btn btn-outline-light btn-sm" onclick="goBack()">
-      <i class="fas fa-arrow-left"></i> Back
-    </button>
-  </div>
-</div>
-{% endblock content-header %}
-
 {% block content %}
-<div class="row mb-4" data-aos="fade-up" data-aos-duration="1000">
-  <div class="col-sm-4 text-center">
-    <a href="{% url 'test_upload' object.id %}">
-      {% if object.passport_photo %}
-        <img src="{{ object.passport_photo.url }}" class="rounded-circle shadow" style="width: 150px; height: 150px; border: 4px solid #007bff;">
-      {% else %}
-        <img src="{% static 'dist/img/avatar.png' %}" class="rounded-circle shadow" style="width: 150px; height: 150px; border: 4px solid #007bff;">
-      {% endif %}
-    </a>
-    <h4 class="mt-3" style="color: #007bff;">{{ object.firstname }} {{ object.middle_name }} {{ object.surname }}</h4>
-    <h5>{{ object.current_class }}</h5>
-    <h5>{{ object.get_gender_display }} | {{ object.get_current_status_display }}</h5>
-  </div>
-  <div class="col-sm-8">
-    <div class="card shadow" style="border-radius: 10px;">
-      <div class="card-body">
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Date of Birth:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.date_of_birth }}</div>
+<script>
+    function printPage() {
+        window.print();
+    }
+    function goBack() {
+        window.history.back();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            document.querySelectorAll('.animate__animated').forEach(el => {
+                el.style.opacity = '1';
+            });
+        }, 200);
+    });
+</script>
+
+<style>
+    body {
+        background: linear-gradient(135deg, #fdfbfb, #ebedee);
+    }
+
+    .main-card {
+        background: #ffffff;
+        border-radius: 0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        margin: 2rem 0;
+        border: none;
+        width: 100%;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #e0f7fa, #fffde7);
+        border: none;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 1rem;
+        border-radius: 0;
+    }
+
+    .card-header .btn {
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .card-header .btn-outline-secondary:hover {
+        background-color: #f1f1f1; color: #000;
+    }
+    .card-header .btn-outline-primary:hover {
+        background-color: #007aff; color: #fff;
+    }
+    .card-header .btn-outline-danger:hover {
+        background-color: #ff3b30; color: #fff;
+    }
+    .card-header .btn-outline-info:hover {
+        background-color: #5ac8fa; color: #fff;
+    }
+
+    .card-body {
+        padding: 2rem;
+    }
+
+    .profile-pic {
+        width: 150px; 
+        height: 150px; 
+        border: 4px solid #007aff;
+        transition: transform 0.3s ease;
+        margin-bottom: 1rem;
+    }
+    .profile-pic:hover {
+        transform: rotate(5deg) scale(1.05);
+    }
+
+    .staff-name {
+        font-weight: 700;
+        font-size: 1.4rem;
+        color: #007aff;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .staff-occupation {
+        font-weight:600;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+    .staff-status {
+        font-size: 1rem;
+        font-weight: 600;
+        margin:0;
+    }
+
+    fieldset {
+        border: none;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #f3f7fa, #ffffff);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+
+    fieldset:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+    }
+
+    legend {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        background: #e67e22; /* Carrot color */
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .detail-line {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 0.5rem;
+    }
+    .detail-line:last-child {
+        border-bottom:none; margin-bottom:0; padding-bottom:0;
+    }
+
+    .detail-icon {
+        font-size: 1.2rem;
+        margin-right: 1rem;
+        flex-shrink:0;
+    }
+
+    .detail-label {
+        font-weight:600;
+        color: #333;
+        margin-right:0.5rem;
+        white-space: nowrap;
+        flex-shrink:0;
+    }
+    .detail-value {
+        color:#555;
+        flex:1;
+    }
+
+    /* Icon colors */
+    .icon-status { color: #4caf50; }
+    .icon-name { color: #007aff; }
+    .icon-gender { color: #ff9800; }
+    .icon-dob { color: #9c27b0; }
+    .icon-doa { color: #4caf50; }
+    .icon-salary { color: #e91e63; }
+    .icon-mobile { color: #2196f3; }
+    .icon-occupation { color: #00bcd4; }
+    .icon-address { color: #795548; }
+    .icon-guarantor { color: #ff5722; }
+    .icon-duration { color: #607d8b; }
+    .icon-nida { color: #9e9e9e; }
+    .icon-tin { color: #f44336; }
+    .icon-startdate { color: #3f51b5; }
+    .icon-enddate { color: #009688; }
+    .icon-others { color: #fbc02d; }
+
+    fieldset:hover legend {
+        background: #d76916; /* Slightly darker carrot on hover */
+    }
+
+    .animate__animated {
+        opacity:0; 
+        animation-duration:0.8s; 
+        animation-fill-mode:forwards;
+    }
+
+    @keyframes fadeInLeft {
+        from {opacity:0; transform: translateX(-30px);}
+        to {opacity:1; transform: translateX(0);}
+    }
+    @keyframes fadeInRight {
+        from {opacity:0; transform: translateX(30px);}
+        to {opacity:1; transform: translateX(0);}
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .card-body {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="container-fluid" data-aos="fade-up">
+    <div class="card main-card">
+        <div class="card-header">
+            <button class="btn btn-outline-secondary btn-sm shadow-sm" onclick="printPage()" title="Print this page">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <a href="{% url 'staff-update' staff.pk %}" class="btn btn-outline-primary btn-sm shadow-sm" title="Edit Staff">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'staff-delete' staff.pk %}" class="btn btn-outline-danger btn-sm shadow-sm" title="Delete Staff">
+                <i class="fas fa-trash-alt"></i> Delete
+            </a>
+            <button class="btn btn-outline-secondary btn-sm shadow-sm" onclick="goBack()" title="Go Back">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <a href="{% url 'staff-list' %}" class="btn btn-outline-info btn-sm shadow-sm" title="View Staff List">
+                <i class="fas fa-list"></i> Staff List
+            </a>
         </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Mobile Number:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.mobile_number }}</div>
+        <div class="card-body d-flex" style="gap:2rem; align-items:flex-start;">
+            <!-- Profile Section -->
+            <div class="profile-section animate__animated" style="animation-name: fadeInLeft; text-align:center;">
+                {% if staff.passport_photo %}
+                    <img src="{{ staff.passport_photo.url }}" alt="Staff Photo"
+                        class="img-fluid rounded-circle shadow-lg profile-pic">
+                {% else %}
+                    <img src="{% static 'dist/img/avatar.png' %}" alt="Default Avatar"
+                        class="img-fluid rounded-circle shadow-lg profile-pic">
+                {% endif %}
+                <h4 class="staff-name">
+                    {{ staff.firstname }} {{ staff.middle_name }} {{ staff.surname }}
+                </h4>
+                <p class="staff-occupation">
+                    {{ staff.get_occupation_display|default:"No Occupation" }}
+                </p>
+                <p class="staff-status">
+                    {% if staff.current_status == 'active' %}
+                        <span style="color:#4caf50;">Active</span>
+                    {% else %}
+                        <span style="color:#f44336;">Inactive</span>
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Details Section -->
+            <div class="details-section animate__animated" style="animation-name: fadeInRight; flex:1;">
+                <!-- Basic Information -->
+                <fieldset>
+                    <legend><i class="fas fa-info-circle"></i> Basic Information</legend>
+                    <div class="detail-line">
+                        <i class="fas fa-toggle-on detail-icon icon-status"></i>
+                        <span class="detail-label">Current Status:</span>
+                        <span class="detail-value">{% if staff.current_status == 'active' %}Active{% else %}Inactive{% endif %}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-user detail-icon icon-name"></i>
+                        <span class="detail-label">Full Name:</span>
+                        <span class="detail-value">{{ staff.firstname }} {{ staff.middle_name }} {{ staff.surname }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-venus-mars detail-icon icon-gender"></i>
+                        <span class="detail-label">Gender:</span>
+                        <span class="detail-value">{% if staff.gender == 'male' %}Male{% else %}Female{% endif %}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-birthday-cake detail-icon icon-dob"></i>
+                        <span class="detail-label">Date of Birth:</span>
+                        <span class="detail-value">{{ staff.date_of_birth|default:"N/A" }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-briefcase detail-icon icon-occupation"></i>
+                        <span class="detail-label">Occupation:</span>
+                        <span class="detail-value">{{ staff.get_occupation_display|default:"No Occupation" }}</span>
+                    </div>
+                </fieldset>
+
+                <!-- Contact & Location -->
+                <fieldset>
+                    <legend><i class="fas fa-map-marker-alt"></i> Contact & Location</legend>
+                    <div class="detail-line">
+                        <i class="fas fa-phone detail-icon icon-mobile"></i>
+                        <span class="detail-label">Mobile Number:</span>
+                        <span class="detail-value">{{ staff.mobile_number|default:"N/A" }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-map-marker-alt detail-icon icon-address"></i>
+                        <span class="detail-label">Address:</span>
+                        <span class="detail-value">{{ staff.address|default:"N/A" }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-user-shield detail-icon icon-guarantor"></i>
+                        <span class="detail-label">Guarantor:</span>
+                        <span class="detail-value">{{ staff.guarantor|default:"N/A" }}</span>
+                    </div>
+                </fieldset>
+
+                <!-- Contract & Employment -->
+                <fieldset>
+                    <legend><i class="fas fa-calendar-check"></i> Contract & Employment</legend>
+                    <div class="detail-line">
+                        <i class="fas fa-calendar-plus detail-icon icon-doa"></i>
+                        <span class="detail-label">Date of Admission:</span>
+                        <span class="detail-value">{{ staff.date_of_admission|default:"N/A" }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-money-bill-wave detail-icon icon-salary"></i>
+                        <span class="detail-label">Salary (TZS):</span>
+                        <span class="detail-value">{{ staff.salary|default:"0.00" }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-clock detail-icon icon-duration"></i>
+                        <span class="detail-label">Contract Duration:</span>
+                        <span class="detail-value">{{ staff.contract_duration|default:"N/A" }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-id-card detail-icon icon-nida"></i>
+                        <span class="detail-label">NIDA ID:</span>
+                        <span class="detail-value">{{ staff.nida_id|default:"N/A" }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-file-invoice-dollar detail-icon icon-tin"></i>
+                        <span class="detail-label">TIN Number:</span>
+                        <span class="detail-value">{{ staff.tin_number|default:"N/A" }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-calendar-alt detail-icon icon-startdate"></i>
+                        <span class="detail-label">Contract Start Date:</span>
+                        <span class="detail-value">{{ staff.contract_start_date|default:"N/A" }}</span>
+                    </div>
+                    <div class="detail-line">
+                        <i class="fas fa-calendar-check detail-icon icon-enddate"></i>
+                        <span class="detail-label">Contract End Date:</span>
+                        <span class="detail-value">{{ staff.contract_end_date|default:"N/A" }}</span>
+                    </div>
+                </fieldset>
+
+                <!-- Others -->
+                <fieldset>
+                    <legend><i class="fas fa-info-circle"></i> Others</legend>
+                    <div class="detail-line">
+                        <i class="fas fa-info-circle detail-icon icon-others"></i>
+                        <span class="detail-label">Other Details:</span>
+                        <span class="detail-value">{{ staff.others|default:"No additional information" }}</span>
+                    </div>
+                </fieldset>
+            </div>
         </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Address:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.address }}</div>
-        </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Comments:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.others }}</div>
-        </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">NIDA ID:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.nida_id }}</div>
-        </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">TIN Number:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.tin_number }}</div>
-        </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Guarantor:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.guarantor }}</div>
-        </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Contract Duration:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.contract_duration }}</div>
-        </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Contract Start Date:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.contract_start_date }}</div>
-        </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Contract End Date:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.contract_end_date }}</div>
-        </div>
-        <div class="form-group row border-bottom pb-2">
-          <label class="col-sm-4 font-weight-bold" style="color: #28a745;">Salary:</label>
-          <div class="col-sm-8" style="color:gray">{{ object.salary }}</div>
-        </div>
-      </div>
     </div>
-  </div>
 </div>
 {% endblock content %}
-
-{% block morejs %}
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
-    integrity="sha384-NkU32VZyLgnbxVuSw/5CCg9zp4xA0mxZiuDAi9g4SM/LuIbr99HyrCP4KiLlXg+T"
-    crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"
-    integrity="sha384-5T5l20F6jpxmo3SiRUt7KA6uP6q/eFN6wxrbykcIcSVuW0eECCqxWOjNnlpmDYBp"
-    crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-<script>
-  // Initialize AOS
-  AOS.init();
-
-  // Function to handle printing
-  function handlePrint() {
-    window.print();
-  }
-
-  // Function to handle going back
-  function goBack() {
-    window.history.back();
-  }
-
-  // Add click event listener to the print button
-  document.addEventListener('DOMContentLoaded', function () {
-    const printButton = document.getElementById('print-button');
-    printButton.addEventListener('click', handlePrint);
-  });
-</script>
-{% endblock morejs %}

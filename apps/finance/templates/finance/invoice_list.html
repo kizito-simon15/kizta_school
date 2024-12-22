@@ -11,293 +11,422 @@
 {% endblock breadcrumb %}
 
 {% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <style>
-/* Styling for the filter section */
-.filters {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: #f9f9fa;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+    }
 
-.filters .form-control {
-  border-radius: 4px;
-}
+    /* Container for everything */
+    .container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0 15px;
+    }
 
-/* Styling for the table */
-.table-container {
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  overflow-x: auto;
-}
+    /* Filters Section */
+    .filters {
+        background: #fff;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
 
-.table {
-  margin-bottom: 0;
-}
+    .filters:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    }
 
-.table thead {
-  background-color: #007bff;
-  color: white;
-}
+    .filters .form-control {
+        border-radius: 30px;
+        border: 1px solid #ccc;
+        font-size: 0.9rem;
+        color: #333;
+    }
 
-.table th, .table td {
-  white-space: nowrap;
-  padding: 10px;
-  vertical-align: middle;
-}
+    .filters input::placeholder,
+    .filters select option {
+        color: #666;
+    }
 
-.table tbody tr:hover {
-  background-color: #f1f1f1;
-}
+    .filters .col-md-4 {
+        display: flex;
+        align-items: center;
+    }
 
-.table tfoot {
-  background-color: #f8f9fa;
-  font-weight: bold;
-}
+    /* Table Container */
+    .table-container {
+        border-radius: 15px;
+        background: #fff;
+        overflow-x: auto;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 60px; /* space for the bottom scrollbar */
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
 
-/* Styling for the scrollbar container */
-#scrolling-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: #2e2e2e;
-  z-index: 1000;
-  display: flex;
-  justify-content: center;
-}
+    .table-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    }
 
-/* Styling for the custom scrollbar */
-#scrolling-bar {
-  width: 70%;
-  height: 20px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  background: #2e2e2e;
-}
+    /* Table Styling */
+    .table {
+        margin-bottom: 0;
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.9rem;
+    }
 
-#scrolling-bar::-webkit-scrollbar {
-  height: 8px;
-}
+    .table thead {
+        background: #e67e22; 
+        color: #fff;
+    }
 
-#scrolling-bar::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
+    .table thead th {
+        text-align: left;
+        font-weight: 600;
+        padding: 12px;
+        white-space: nowrap;
+        border-bottom: none;
+    }
 
-#scrolling-bar::-webkit-scrollbar-track {
-  background: #2e2e2e;
-}
+    .table tbody tr {
+        transition: background 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
 
-/* General styles */
-.text-blue {
-  color: #007bff;
-}
+    .table tbody tr:hover {
+        background: #f1f1f1;
+    }
 
-.text-green {
-  color: #28a745;
-}
+    .table tbody td {
+        padding: 10px 12px;
+        vertical-align: middle;
+        border-bottom: 1px solid #eee;
+        white-space: nowrap;
+    }
 
-.magenta-header {
-  color: magenta;
-}
+    .table tfoot {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
 
-.clickable-row {
-  cursor: pointer;
-}
+    .table tfoot th {
+        padding: 12px;
+        border-top: 1px solid #eee;
+    }
+
+    .text-blue {
+        color: #007bff !important;
+    }
+
+    .magenta-header {
+        color: #e67e22; 
+        font-weight: 600;
+    }
+
+    /* Bottom Scrolling Bar Container */
+    #scrolling-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: #2e2e2e;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        padding: 5px 0;
+    }
+
+    /* Custom Scrollbar */
+    #scrolling-bar {
+        width: 70%;
+        height: 20px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        background: #2e2e2e;
+        border-radius: 10px;
+    }
+
+    #scrolling-bar::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    #scrolling-bar::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+
+    #scrolling-bar::-webkit-scrollbar-track {
+        background: #2e2e2e;
+    }
+
+    /* Buttons within table cells */
+    .btn {
+        font-size: 0.8rem;
+        border-radius: 20px;
+        padding: 5px 10px;
+        text-decoration: none;
+        color: #fff;
+        transition: background 0.3s;
+        font-weight: 600;
+    }
+
+    .btn-success {
+        background: #28a745;
+    }
+
+    .btn-success:hover {
+        background: #218838;
+        text-decoration: none;
+        color: #fff;
+    }
+
+    /* AOS Animations */
+    [data-aos="fade-up"] {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    [data-aos="fade-up"].aos-animate {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .clickable-row {
+        cursor: pointer;
+    }
+
+    /* Responsive Adjustments */
+    @media(max-width: 600px) {
+        .filters {
+            padding: 15px;
+        }
+
+        .table thead th, .table tbody td {
+            padding: 8px 10px;
+        }
+
+        .btn {
+            font-size: 0.75rem;
+        }
+    }
+
 </style>
-
+</head>
+<body>
 <div class="container" data-aos="fade-up" data-aos-duration="1000">
-  <div class="filters mb-3">
-    <div class="row">
-      <div class="col-md-4 mb-2">
-        <select id="filterSession" class="form-control text-green">
-          <option value="">Filter by Session</option>
-          {% for session in sessions %}
-          <option value="{{ session.name }}">{{ session.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-4 mb-2">
-        <select id="filterInstallment" class="form-control text-green">
-          <option value="">Filter by Installment</option>
-          {% for installment in installments %}
-          <option value="{{ installment.name }}">{{ installment.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-4 mb-2">
-        <select id="filterClass" class="form-control text-green">
-          <option value="">Filter by Class</option>
-          {% for student_class in classes %}
-          <option value="{{ student_class.name }}">{{ student_class.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
+    <div class="filters mb-3">
+        <div class="row">
+            <div class="col-md-4 mb-2">
+                <select id="filterSession" class="form-control">
+                    <option value="">Filter by Session</option>
+                    {% for session in sessions %}
+                    <option value="{{ session.name }}">{{ session.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-2">
+                <select id="filterInstallment" class="form-control">
+                    <option value="">Filter by Installment</option>
+                    {% for installment in installments %}
+                    <option value="{{ installment.name }}">{{ installment.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-2">
+                <select id="filterClass" class="form-control">
+                    <option value="">Filter by Class</option>
+                    {% for student_class in classes %}
+                    <option value="{{ student_class.name }}">{{ student_class.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-2">
+                <input type="text" id="filterStudent" placeholder="Filter by Student Name" class="form-control">
+            </div>
+            <div class="col-md-4 mb-2">
+                <select id="filterTotalPaid" class="form-control">
+                    <option value="">Filter by Total Paid</option>
+                    <option value="full_paid">Full Paid</option>
+                    <option value="half_paid">Half Paid</option>
+                    <option value="not_paid">Not Paid</option>
+                </select>
+            </div>
+        </div>
     </div>
-    <div class="row">
-      <div class="col-md-4 mb-2">
-        <input type="text" id="filterStudent" placeholder="Filter by Student Name" class="form-control text-green">
-      </div>
-      <div class="col-md-4 mb-2">
-        <select id="filterTotalPaid" class="form-control text-green">
-          <option value="">Filter by Total Paid</option>
-          <option value="full_paid">Full Paid</option>
-          <option value="half_paid">Half Paid</option>
-          <option value="not_paid">Not Paid</option>
-        </select>
-      </div>
-    </div>
-  </div>
 
-  <div id="table-container" class="table-container" data-aos="fade-up" data-aos-duration="1000">
-    <table id="invoicetable" class="table table-bordered table-hover">
-      <thead>
-        <tr>
-          <th>S/N</th>
-          <th>Invoice</th>
-          <th>Session</th>
-          <th>Installment</th>
-          <th>Class</th>
-          <th>Total Payable</th>
-          <th>Total Paid</th>
-          <th>Balance</th>
-          <th>Create Payments</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for invoice in invoices %}
-        <tr class='clickable-row' data-href="{% url 'invoice-detail' invoice.id %}" data-aos="fade-up" data-aos-duration="1000">
-          <td class="magenta-header">{{ forloop.counter }}</td>
-          <td>{{ invoice }}</td>
-          <td>{{ invoice.session }}</td>
-          <td>{{ invoice.installment }}</td>
-          <td>{{ invoice.class_for }}</td>
-          <td>{{ invoice.total_amount_payable | intcomma }}</td>
-          <td>{{ invoice.total_amount_paid | intcomma }}</td>
-          <td>{{ invoice.balance | intcomma }}</td>
-          <td><a class="btn btn-success btn-sm" href="{% url 'receipt-create' %}?invoice={{ invoice.id }}">Add new receipt</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr>
-          <th colspan="5" style="text-align: right;">Totals</th>
-          <th id="totalPayable" class="text-blue">Total Payable: 0</th>
-          <th id="totalPaid" class="text-blue">Total Paid: 0</th>
-          <th id="totalBalance" class="text-blue">Total Balance: 0</th>
-          <th></th>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
+    <div id="table-container" class="table-container" data-aos="fade-up" data-aos-duration="1000">
+        <table id="invoicetable" class="table">
+            <thead>
+                <tr>
+                    <th>S/N</th>
+                    <th>Invoice</th>
+                    <th>Session</th>
+                    <th>Installment</th>
+                    <th>Class</th>
+                    <th>Total Payable</th>
+                    <th>Total Paid</th>
+                    <th>Balance</th>
+                    <th>Create Payments</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr class='clickable-row' data-href="{% url 'invoice-detail' invoice.id %}">
+                    <td class="magenta-header">{{ forloop.counter }}</td>
+                    <td>{{ invoice }}</td>
+                    <td>{{ invoice.session }}</td>
+                    <td>{{ invoice.installment }}</td>
+                    <td>{{ invoice.class_for }}</td>
+                    <td>{{ invoice.total_amount_payable|intcomma }}</td>
+                    <td>{{ invoice.total_amount_paid|intcomma }}</td>
+                    <td>{{ invoice.balance|intcomma }}</td>
+                    <td><a class="btn btn-success" href="{% url 'receipt-create' %}?invoice={{ invoice.id }}">Add new receipt</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="5" style="text-align: right;">Totals</th>
+                    <th id="totalPayable" class="text-blue">Total Payable: 0</th>
+                    <th id="totalPaid" class="text-blue">Total Paid: 0</th>
+                    <th id="totalBalance" class="text-blue">Total Balance: 0</th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
 </div>
 
 <div id="scrolling-container">
-  <div id="scrolling-bar"></div>
+    <div id="scrolling-bar"></div>
 </div>
 
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const filterSession = document.getElementById('filterSession');
-    const filterInstallment = document.getElementById('filterInstallment');
-    const filterClass = document.getElementById('filterClass');
-    const filterStudent = document.getElementById('filterStudent');
-    const filterTotalPaid = document.getElementById('filterTotalPaid');
-    const table = document.getElementById('invoicetable').getElementsByTagName('tbody')[0];
-    const totalPayable = document.getElementById('totalPayable');
-    const totalPaid = document.getElementById('totalPaid');
-    const totalBalance = document.getElementById('totalBalance');
-    const scrollingBar = document.getElementById('scrolling-bar');
-    const tableContainer = document.getElementById('table-container');
+    AOS.init({
+        duration: 1000,
+        once: true,
+    });
 
-    function updateSerialNumbers() {
-      let serialNumber = 1;
-      for (let row of table.rows) {
-        if (row.style.display !== 'none') {
-          row.cells[0].textContent = serialNumber;
-          serialNumber++;
+    document.addEventListener("DOMContentLoaded", function() {
+        const filterSession = document.getElementById('filterSession');
+        const filterInstallment = document.getElementById('filterInstallment');
+        const filterClass = document.getElementById('filterClass');
+        const filterStudent = document.getElementById('filterStudent');
+        const filterTotalPaid = document.getElementById('filterTotalPaid');
+        const table = document.getElementById('invoicetable').getElementsByTagName('tbody')[0];
+        const totalPayable = document.getElementById('totalPayable');
+        const totalPaid = document.getElementById('totalPaid');
+        const totalBalance = document.getElementById('totalBalance');
+        const scrollingBar = document.getElementById('scrolling-bar');
+        const tableContainer = document.getElementById('table-container');
+
+        function updateSerialNumbers() {
+            let serialNumber = 1;
+            for (let row of table.rows) {
+                if (row.style.display !== 'none') {
+                    row.cells[0].textContent = serialNumber;
+                    serialNumber++;
+                }
+            }
         }
-      }
-    }
 
-    function updateTotals() {
-      let totalPayableValue = 0;
-      let totalPaidValue = 0;
-      let totalBalanceValue = 0;
+        function updateTotals() {
+            let totalPayableValue = 0;
+            let totalPaidValue = 0;
+            let totalBalanceValue = 0;
 
-      for (let row of table.rows) {
-        if (row.style.display !== 'none') {
-          totalPayableValue += parseInt(row.cells[5].innerText.replace(/,/g, '')) || 0;
-          totalPaidValue += parseInt(row.cells[6].innerText.replace(/,/g, '')) || 0;
-          totalBalanceValue += parseInt(row.cells[7].innerText.replace(/,/g, '')) || 0;
+            for (let row of table.rows) {
+                if (row.style.display !== 'none') {
+                    totalPayableValue += parseInt(row.cells[5].innerText.replace(/,/g, '')) || 0;
+                    totalPaidValue += parseInt(row.cells[6].innerText.replace(/,/g, '')) || 0;
+                    totalBalanceValue += parseInt(row.cells[7].innerText.replace(/,/g, '')) || 0;
+                }
+            }
+
+            totalPayable.innerText = `Total Payable: ${totalPayableValue.toLocaleString()}`;
+            totalPaid.innerText = `Total Paid: ${totalPaidValue.toLocaleString()}`;
+            totalBalance.innerText = `Total Balance: ${totalBalanceValue.toLocaleString()}`;
         }
-      }
 
-      totalPayable.innerText = `Total Payable: ${totalPayableValue.toLocaleString()}`;
-      totalPaid.innerText = `Total Paid: ${totalPaidValue.toLocaleString()}`;
-      totalBalance.innerText = `Total Balance: ${totalBalanceValue.toLocaleString()}`;
-    }
+        function filterTable() {
+            const sessionValue = filterSession.value.toLowerCase();
+            const installmentValue = filterInstallment.value.toLowerCase();
+            const classValue = filterClass.value.toLowerCase();
+            const studentValue = filterStudent.value.toLowerCase();
+            const totalPaidValue = filterTotalPaid.value;
 
-    function filterTable() {
-      const sessionValue = filterSession.value.toLowerCase();
-      const installmentValue = filterInstallment.value.toLowerCase();
-      const classValue = filterClass.value.toLowerCase();
-      const studentValue = filterStudent.value.toLowerCase();
-      const totalPaidValue = filterTotalPaid.value;
+            for (let row of table.rows) {
+                const sessionText = row.cells[2].innerText.toLowerCase();
+                const installmentText = row.cells[3].innerText.toLowerCase();
+                const classText = row.cells[4].innerText.toLowerCase();
+                const studentText = row.cells[1].innerText.toLowerCase();
+                const paidAmount = parseInt(row.cells[6].innerText.replace(/,/g, '')) || 0;
+                const balanceAmount = parseInt(row.cells[7].innerText.replace(/,/g, '')) || 0;
 
-      for (let row of table.rows) {
-        const sessionText = row.cells[2].innerText.toLowerCase();
-        const installmentText = row.cells[3].innerText.toLowerCase();
-        const classText = row.cells[4].innerText.toLowerCase();
-        const studentText = row.cells[1].innerText.toLowerCase();
-        const payableAmount = parseInt(row.cells[5].innerText.replace(/,/g, '')) || 0;
-        const paidAmount = parseInt(row.cells[6].innerText.replace(/,/g, '')) || 0;
-        const balanceAmount = parseInt(row.cells[7].innerText.replace(/,/g, '')) || 0;
+                let paidCondition = (totalPaidValue === "" ||
+                    (totalPaidValue === "full_paid" && balanceAmount === 0) ||
+                    (totalPaidValue === "half_paid" && paidAmount > 0 && balanceAmount > 0) ||
+                    (totalPaidValue === "not_paid" && paidAmount === 0));
 
-        let paidCondition = (totalPaidValue === "" ||
-          (totalPaidValue === "full_paid" && balanceAmount === 0) ||
-          (totalPaidValue === "half_paid" && paidAmount > 0 && balanceAmount > 0) ||
-          (totalPaidValue === "not_paid" && paidAmount === 0));
-
-        if ((sessionValue === "" || sessionText.includes(sessionValue)) &&
-            (installmentValue === "" || installmentText.includes(installmentValue)) &&
-            (classValue === "" || classText.includes(classValue)) &&
-            (studentValue === "" || studentText.includes(studentValue)) &&
-            paidCondition) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
+                if ((sessionValue === "" || sessionText.includes(sessionValue)) &&
+                    (installmentValue === "" || installmentText.includes(installmentValue)) &&
+                    (classValue === "" || classText.includes(classValue)) &&
+                    (studentValue === "" || studentText.includes(studentValue)) &&
+                    paidCondition) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+            updateSerialNumbers();
+            updateTotals();
         }
-      }
-      updateSerialNumbers();
-      updateTotals();
-    }
 
-    filterSession.addEventListener('change', filterTable);
-    filterInstallment.addEventListener('change', filterTable);
-    filterClass.addEventListener('change', filterTable);
-    filterStudent.addEventListener('input', filterTable);
-    filterTotalPaid.addEventListener('change', filterTable);
+        filterSession.addEventListener('change', filterTable);
+        filterInstallment.addEventListener('change', filterTable);
+        filterClass.addEventListener('change', filterTable);
+        filterStudent.addEventListener('input', filterTable);
+        filterTotalPaid.addEventListener('change', filterTable);
 
-    updateSerialNumbers(); // Initialize serial numbers
-    updateTotals(); // Calculate totals initially
+        updateSerialNumbers();
+        updateTotals();
 
-    // Sync scrolling between table container and custom scrollbar
-    const syncScroll = (source, target) => {
-      target.scrollLeft = source.scrollLeft;
-    };
+        // Clickable rows to redirect
+        document.querySelectorAll('.clickable-row').forEach(row => {
+            row.addEventListener('click', () => {
+                window.location = row.getAttribute('data-href');
+            });
+        });
 
-    // Attach scroll event listeners
-    tableContainer.addEventListener('scroll', () => syncScroll(tableContainer, scrollingBar));
-    scrollingBar.addEventListener('scroll', () => syncScroll(scrollingBar, tableContainer));
+        // Sync scrolling
+        const syncScroll = (source, target) => {
+            target.scrollLeft = source.scrollLeft;
+        };
 
-    // Create a fake content inside scrolling-bar to make it scrollable
-    const fakeContent = document.createElement('div');
-    fakeContent.style.width = tableContainer.scrollWidth + 'px';
-    fakeContent.style.height = '1px'; // Just to make it visible
-    scrollingBar.appendChild(fakeContent);
-  });
+        tableContainer.addEventListener('scroll', () => syncScroll(tableContainer, scrollingBar));
+        scrollingBar.addEventListener('scroll', () => syncScroll(scrollingBar, tableContainer));
+
+        // Create a fake content inside scrolling-bar for syncing
+        const fakeContent = document.createElement('div');
+        fakeContent.style.width = tableContainer.scrollWidth + 'px';
+        fakeContent.style.height = '1px';
+        scrollingBar.appendChild(fakeContent);
+    });
 </script>
+</body>
+</html>
 {% endblock content %}

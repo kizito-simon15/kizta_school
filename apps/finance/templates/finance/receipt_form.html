@@ -1,28 +1,319 @@
 {% extends 'base.html' %}
-{% load humanize %}
+{% load humanize widget_tweaks %}
+
+{% block title %}
+Add Payment
+{% endblock title %}
 
 {% block content %}
-<div class="row">
-    <div class="col-8">
-        <form action="" method="POST">
-            {% csrf_token %}
-            {% include 'corecode/form_snippet.html' %}
-            <input type="submit" class="btn btn-primary" value="Add payment">
-        </form>
-    </div>
-    <div class="col-4">
-        <div class="alert alert-info" role="alert">
-            <h3>INVOICE</h3>
-            <p>{{ invoice | upper }}</p>
-            <hr>
-            <ul>
-                <li>Session: {{ invoice.session }}</li>
-                <li>Installment: {{ invoice.installment }}</li>
-                <li>Class: {{ invoice.class_for }}</li>
-                <li>Total Amount Payable: {{ invoice.total_amount_payable | intcomma }}</li>
-                <li>Total Amount Paid: {{ invoice.total_amount_paid | intcomma }}</li>
-                <li><strong>Balance: {{ invoice.balance | intcomma }}</strong></li>
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: #f9f9fa;
+        margin:0;
+        padding:20px;
+        color: #333;
+    }
+    .container-fluid {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    .col-md-7 {
+        width: 58.3333%;
+        float: left;
+        box-sizing: border-box;
+        padding: 0 15px;
+    }
+    .col-md-5 {
+        width: 41.6667%;
+        float: left;
+        box-sizing: border-box;
+        padding: 0 15px;
+    }
+    h3 {
+        font-size: 1.2rem;
+        font-weight:600;
+        margin-bottom:1rem;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+        color:#333;
+    }
+    h3 i {
+        color: #e67e22;
+    }
+    .instructions {
+        background: #fff;
+        padding: 10px 15px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-start;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from {opacity:0;}
+        to {opacity:1;}
+    }
+    .instructions i {
+        color: #e67e22;
+        font-size:1.2rem;
+        margin-top:3px;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-label {
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+        margin-bottom:0.3rem;
+        color:#333;
+        font-size:0.95rem;
+    }
+    .form-label i {
+        color: #e67e22;
+    }
+    .form-control {
+        border-radius: 0 30px 30px 0;
+        font-size: 0.9rem;
+        color: #fff;
+        background: #00bfff;
+        border: none;
+        padding: 0.5rem 1rem;
+        transition: box-shadow 0.3s, border-color 0.3s;
+    }
+    .form-control:focus {
+        box-shadow:0 0 0 0.2rem rgba(0,191,255,0.3);
+    }
+    .input-group-text {
+        background: #00bfff;
+        border: none;
+        border-radius: 30px 0 0 30px;
+        color: #fff;
+    }
+    .input-group-text i {
+        color:#fff;
+    }
+
+    .btn {
+        border-radius:20px;
+        font-weight:600;
+        border:none;
+        padding:8px 14px;
+        font-size:0.9rem;
+        color:#fff;
+        display:inline-flex;
+        align-items:center;
+        gap:0.5rem;
+        cursor:pointer;
+        background: linear-gradient(135deg, #e67e22, #d46b11);
+        transition:background 0.3s,transform 0.3s;
+    }
+    .btn:hover {
+        background: linear-gradient(135deg, #cf650f, #b8550c);
+        transform: translateY(-2px);
+    }
+
+    .invoice-card {
+        margin-top:20px;
+        background: #fff;
+        border-radius:20px;
+        box-shadow:0 4px 15px rgba(0,0,0,0.05);
+        animation:fadeIn 1s ease-in-out;
+    }
+    .invoice-header {
+        background: linear-gradient(135deg, #20c997, #10866a);
+        color:#fff;
+        padding:15px;
+        border-radius:20px 20px 0 0;
+        font-size:1rem;
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+    }
+    .invoice-header i {
+        font-size:1.2rem;
+    }
+
+    .invoice-body {
+        padding:15px;
+        font-size:0.9rem;
+        color:#333;
+    }
+    .invoice-body h5 {
+        font-size:1rem;
+        font-weight:600;
+        margin-bottom:10px;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+        color:#333;
+    }
+    .invoice-body ul {
+        list-style:none;
+        padding:0;
+        margin:0;
+    }
+    .invoice-body ul li {
+        margin:5px 0;
+        position:relative;
+        padding-left:20px;
+    }
+    .invoice-body ul li::before {
+        content:"🍊";
+        position:absolute;
+        left:0;
+        top:0;
+        font-size:1rem;
+    }
+
+    .form-text {
+        font-size:0.8rem;
+        color:#666;
+    }
+
+    .text-end {
+        text-align:end;
+    }
+
+    @media(max-width:600px) {
+        .col-md-7, .col-md-5 {
+            width:100%;
+            padding:0;
+            margin-bottom:20px;
+        }
+    }
+</style>
+
+<div class="container-fluid" data-aos="fade-up">
+    <h3><i class="fas fa-money-check-alt"></i> Add Payment</h3>
+    <div class="instructions">
+        <i class="fas fa-info-circle"></i>
+        <div>
+            <strong>Instructions:</strong><br>
+            Please fill out the form on the left to record a new payment.  
+            <ul style="list-style:none; padding-left:0; margin:5px 0 0;">
+                <li><span style="color:#e67e22;">💲</span> <strong>Amount paid:</strong> Enter the amount received (commas will auto-format as you type).</li>
+                <li><span style="color:#e67e22;">📅</span> <strong>Date paid:</strong> Specify the payment date (YYYY-MM-DD).</li>
+                <li><span style="color:#e67e22;">💬</span> <strong>Comment:</strong> Add any notes or leave blank if none.</li>
+                <li><span style="color:#e67e22;">💳</span> <strong>Payment method:</strong> Choose how the payment was made.</li>
             </ul>
+            Once ready, click <em>“Add payment”</em> to submit.
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-7">
+            <form action="" method="POST" id="paymentForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-money-bill-wave"></i> Amount Paid</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-money-bill-wave"></i></span>
+                        {{ form.amount_paid|add_class:"form-control" }}
+                    </div>
+                    <small class="form-text">Enter the amount received from the parent/student. Commas will be added as you type.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-calendar-alt"></i> Date Paid</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        {{ form.date_paid|add_class:"form-control" }}
+                    </div>
+                    <small class="form-text">Specify the payment date in YYYY-MM-DD format.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-comment-dots"></i> Comment</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-comment-dots"></i></span>
+                        {{ form.comment|add_class:"form-control" }}
+                    </div>
+                    <small class="form-text">Optional: Add any notes about this payment.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-credit-card"></i> Payment Method</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-credit-card"></i></span>
+                        {{ form.payment_method|add_class:"form-control" }}
+                    </div>
+                    <small class="form-text">Choose how the payment was made (e.g. Cash, MPesa, Bank).</small>
+                </div>
+
+                <div class="text-end" style="margin-top:20px;">
+                    <button type="submit" class="btn">
+                        <i class="fas fa-plus"></i> Add payment
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-5">
+            <div class="invoice-card">
+                <div class="invoice-header">
+                    <i class="fas fa-file-invoice-dollar"></i> INVOICE
+                </div>
+                <div class="invoice-body">
+                    <h5>{{ invoice.student.firstname }} {{ invoice.student.surname }} ({{ invoice.student.unique_id }})</h5>
+                    <ul>
+                        <li>Session: {{ invoice.session }}</li>
+                        <li>Installment: {{ invoice.installment }}</li>
+                        <li>Class: {{ invoice.class_for }}</li>
+                        <li>Total Amount Payable: {{ invoice.total_amount_payable|intcomma }}</li>
+                        <li>Total Amount Paid: {{ invoice.total_amount_paid|intcomma }}</li>
+                        <li><strong>Balance: {{ invoice.balance|intcomma }}</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock content %}
 
+{% block morejs %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+   AOS.init({
+       duration:1000,
+       once:true,
+   });
+
+   function formatNumberWithCommas(x) {
+     if(!x) return '';
+     x = x.replace(/,/g, ''); // Remove existing commas
+     return x.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+   }
+
+   const amountField = document.getElementById('id_amount_paid');
+   if (amountField) {
+       amountField.addEventListener('input', function() {
+           const start = this.selectionStart;
+           const end = this.selectionEnd;
+
+           const formatted = formatNumberWithCommas(this.value);
+           this.value = formatted;
+
+           // Attempt to restore cursor position
+           this.setSelectionRange(start, end);
+       });
+
+       const paymentForm = document.getElementById('paymentForm');
+       paymentForm.addEventListener('submit', function() {
+           // Remove commas before submitting
+           amountField.value = amountField.value.replace(/,/g, '');
+       });
+   }
+</script>
+{% endblock morejs %}

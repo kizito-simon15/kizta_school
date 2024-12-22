@@ -1,280 +1,340 @@
-{% extends 'base.html' %}
-
-{% block title %}Staff{% endblock title %}
-
-{% block breadcrumb %}
-<a class="btn btn-primary" href="{% url 'staff-create' %}">
-  <i class="fas fa-plus"></i> New Staff
-</a>
-{% endblock breadcrumb %}
+{% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<div class="container mt-5" data-aos="fade-up" data-aos-duration="1000">
-  <!-- Select dropdown for occupations -->
-  <div class="form-group">
-    <label for="occupationSelect" style="color: #ff9800; font-weight: bold;">Select Occupation:</label>
-    <select id="occupationSelect" class="form-control" style="background-color: #ff9800; color: white;">
-      <option value="">All</option>
-      <option value="teacher">Teacher</option>
-      <option value="administrator">Administrator</option>
-      <option value="support_staff">Support Staff</option>
-    </select>
-  </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const staffTable = document.getElementById('staffTable');
+    const rows = staffTable.querySelectorAll('tbody tr');
 
-  <!-- Filter button -->
-  <button onclick="filterStaff()" class="btn btn-warning mt-3">Filter</button>
+    const sortNameBtn = document.getElementById('sortNameBtn');
+    const sortSexBtn = document.getElementById('sortSexBtn');
+    const sortOccupationBtn = document.getElementById('sortOccupationBtn');
 
-  <!-- Search field -->
-  <div class="form-group mt-4">
-    <input type="text" id="searchInput" class="form-control" placeholder="Search by name or other details..." style="border: 2px solid #4caf50;">
-  </div>
+    let nameAscending = true;
+    let sexAscending = true;
+    let occAscending = true;
 
-  <!-- Summary table for total male, female, and all staff -->
-  <div class="table-responsive mt-4">
-    <table class="table table-bordered table-striped">
-      <thead style="background-color: #4caf50; color: white;">
-        <tr>
-          <th scope="col">Total Male Staff</th>
-          <th scope="col">Total Female Staff</th>
-          <th scope="col">Total Staff</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td id="maleCount">0</td>
-          <td id="femaleCount">0</td>
-          <td id="totalCount">0</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+    // Filter Rows by Name
+    searchInput.addEventListener('input', filterRows);
 
-<div class="container mt-5" data-aos="fade-up" data-aos-duration="1000">
-  <div class="table-responsive">
-    <table id="stafftable" class="table table-bordered table-hover table-striped">
-      <thead class="thead-colored">
-        <tr>
-          <th>S/N</th>
-          <th>
-            Fullname 
-            <span onclick="sortTable(1, 'string', 'asc')" class="sort-arrow">&#9650;</span>
-            <span onclick="sortTable(1, 'string', 'desc')" class="sort-arrow">&#9660;</span>
-          </th>
-          <th>
-            Gender 
-            <span onclick="sortTable(2, 'gender', 'asc')" class="sort-arrow">&#9650;</span>
-            <span onclick="sortTable(2, 'gender', 'desc')" class="sort-arrow">&#9660;</span>
-          </th>
-          <th>Mobile Phone Number</th>
-          <th>Occupation</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for staff in object_list %}
-          <tr class='clickable-row' data-href="{% url 'staff-detail' staff.id %}">
-            <td>{{ forloop.counter }}</td>
-            <td>{{ staff.firstname }} {{ staff.middle_name }} {{ staff.surname }}</td>
-            <td>{{ staff.get_gender_display }}</td>
-            <td>{{ staff.mobile_number }}</td>
-            <td>{{ staff.occupation }}</td>
-            <td>
-              {% if staff.get_current_status_display == "Active" %}
-                <span class="badge badge-success">Active</span>
-              {% else %}
-                <span class="badge badge-danger">Inactive</span>
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    sortNameBtn.addEventListener('click', () => {
+        sortRows('data-name', nameAscending);
+        nameAscending = !nameAscending;
+        sortNameBtn.textContent = `Sort by Name ${nameAscending ? '▲' : '▼'}`;
+    });
+
+    sortSexBtn.addEventListener('click', () => {
+        sortRows('data-sex', sexAscending);
+        sexAscending = !sexAscending;
+        sortSexBtn.textContent = `Sort by Sex ${sexAscending ? '▲' : '▼'}`;
+    });
+
+    sortOccupationBtn.addEventListener('click', () => {
+        sortRows('data-occ', occAscending);
+        occAscending = !occAscending;
+        sortOccupationBtn.textContent = `Sort by Occupation ${occAscending ? '▲' : '▼'}`;
+    });
+
+    function filterRows() {
+        const query = searchInput.value.toLowerCase();
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            if (name.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function sortRows(attribute, ascending) {
+        const tbody = staffTable.querySelector('tbody');
+        const visibleRows = Array.from(rows).filter(r => r.style.display !== 'none');
+        visibleRows.sort((a, b) => {
+            const valA = a.getAttribute(attribute).toLowerCase();
+            const valB = b.getAttribute(attribute).toLowerCase();
+            return ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        });
+        visibleRows.forEach(r => tbody.appendChild(r));
+    }
+});
+</script>
+
+<style>
+    body {
+        background: #fdfbfb;
+    }
+
+    .title-section {
+        margin: 20px;
+    }
+
+    .title-section h2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        color: #fff;
+        background: #e67e22; /* Carrot color */
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .title-section p {
+        color: #555;
+        margin-top: 0.5rem;
+    }
+
+    .kpi-section {
+        margin-bottom:2rem;
+        margin: 20px;
+    }
+    .kpi-section h2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        color: #fff;
+        background: #e67e22; 
+        font-size: 1.6rem;
+        font-weight:600;
+        margin-bottom:1rem;
+    }
+
+    .kpi-metrics {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .kpi-item {
+        background: linear-gradient(135deg, #b2ebf2, #c8e6c9);
+        flex: 1;
+        min-width: 150px;
+        border-radius: 15px;
+        padding: 15px;
+        text-align: center;
+        font-weight: 600;
+        color: #333;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .kpi-item h3 {
+        font-size:1rem;
+        margin-bottom:0.5rem;
+    }
+    .kpi-item span {
+        font-size:1.2rem;
+        color:#007aff;
+    }
+
+    .btn-primary-add {
+        border-radius: 50px;
+        font-weight:600;
+        background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+        border:none;
+        color:#fff;
+        font-size:0.9rem;
+        padding:10px 20px;
+    }
+
+    .controls-container {
+        margin: 20px;
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        align-items:center;
+    }
+
+    .search-input {
+        border-radius:50px;
+        border:1px solid #ccc;
+        padding:8px 14px;
+        font-size:0.9rem;
+        width:200px;
+    }
+
+    .sort-btn {
+        border-radius:50px;
+        background:#ffeb3b;
+        color:#333;
+        font-weight:600;
+        border:none;
+        padding:8px 14px;
+        font-size:0.9rem;
+        cursor:pointer;
+    }
+
+    table {
+        width: 96%;
+        margin:20px auto;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius:15px;
+        overflow:hidden;
+        background:#fff;
+    }
+
+    thead tr {
+        background:deepskyblue;
+        color:black;
+        text-transform:uppercase;
+        font-size:0.9rem;
+    }
+
+    thead th {
+        padding:12px;
+        border:none;
+        white-space:nowrap;
+    }
+
+    tbody tr:nth-child(even) {
+        background:#fafafa;
+    }
+
+    tbody tr {
+        border-bottom:1px solid #e0e0e0;
+        transition:background 0.2s;
+        cursor:pointer;
+    }
+
+    tbody tr:hover {
+        background:#f0f8ff;
+    }
+
+    td {
+        padding:12px;
+        vertical-align:middle;
+        white-space:nowrap;
+        color:#333;
+        font-size:0.95rem;
+    }
+
+    .btn-sm {
+        font-size:0.8rem;
+        padding:6px 10px;
+        border-radius:20px;
+        font-weight:600;
+        border:none;
+        color:#fff;
+        margin-right:5px;
+    }
+
+    .btn-info-view {
+        background:#007aff; 
+    }
+
+    .btn-success-edit {
+        background:#4caf50;
+    }
+
+    .btn-danger-delete {
+        background:#e53935;
+    }
+
+    .btn-sm i {
+        font-size:1rem;
+    }
+
+</style>
+
+<div style="padding:20px;">
+
+    <div class="title-section">
+        <h2>🧑‍💼 Staff Members</h2>
+        <p>Manage and view all currently active staff. Make edits, view details, or add new members easily.</p>
+    </div>
+
+    <div class="kpi-section">
+        <h2><i class="fas fa-chart-pie"></i> Key Metrics</h2>
+        <div class="kpi-metrics">
+            <div class="kpi-item">
+                <h3>👨 Total Male</h3>
+                <span id="total-male">{{ total_male }}</span>
+            </div>
+            <div class="kpi-item">
+                <h3>👩 Total Female</h3>
+                <span id="total-female">{{ total_female }}</span>
+            </div>
+            <div class="kpi-item">
+                <h3>👥 Overall Total</h3>
+                <span id="overall-total">{{ overall_total }}</span>
+            </div>
+        </div>
+        <div class="text-center">
+            <a class="btn btn-primary-add mb-3" href="{% url 'staff-create' %}">
+                <i class="fas fa-user-plus"></i> Add New Staff
+            </a>
+        </div>
+    </div>
+
+    <div class="controls-container">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search by name...">
+        <button class="sort-btn" id="sortNameBtn">Sort by Name ▲</button>
+        <button class="sort-btn" id="sortSexBtn">Sort by Sex ▲</button>
+        <button class="sort-btn" id="sortOccupationBtn">Sort by Occupation ▲</button>
+    </div>
+
+    <div style="overflow-x:auto;">
+        <table id="staffTable">
+            <thead>
+                <tr>
+                    <th>🔢 #</th>
+                    <th>🙎 Name</th>
+                    <th>👫 Sex</th>
+                    <th>💼 Occupation</th>
+                    <th>📱 Mobile</th>
+                    <th>🔅 Status</th>
+                    <th>⚙️ Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for staff in staff_list %}
+                <tr
+                    data-name="{{ staff.firstname }} {{ staff.middle_name }} {{ staff.surname|default_if_none:'' }}"
+                    data-sex="{% if staff.gender == 'male' %}m{% else %}f{% endif %}"
+                    data-occ="{{ staff.get_occupation_display|default:'none'|lower }}"
+                >
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ staff.firstname }} {{ staff.middle_name }} {{ staff.surname }}</td>
+                    <td>
+                        {% if staff.gender == 'male' %}
+                            M
+                        {% else %}
+                            F
+                        {% endif %}
+                    </td>
+                    <td>{{ staff.get_occupation_display|default:"N/A" }}</td>
+                    <td>{{ staff.mobile_number|default:"N/A" }}</td>
+                    <td>
+                        {% if staff.current_status == 'active' %}
+                            <span style="color:#4caf50;font-weight:600;">Active</span>
+                        {% else %}
+                            <span style="color:#f44336;font-weight:600;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a class="btn-sm btn-info-view" href="{% url 'staff-detail' staff.pk %}" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a class="btn-sm btn-success-edit" href="{% url 'staff-update' staff.pk %}" title="Edit Staff">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a class="btn-sm btn-danger-delete" href="{% url 'staff-delete' staff.pk %}" title="Delete Staff">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted" style="padding: 20px;">No active staff found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock content %}
-
-{% block morejs %}
-<script>
-  // Function to update the summary table
-  function updateSummary() {
-    const rows = document.getElementById("stafftable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-    let maleCount = 0;
-    let femaleCount = 0;
-
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i].style.display !== "none") {
-        const gender = rows[i].getElementsByTagName("td")[2].innerText.toLowerCase();
-        if (gender === "male") {
-          maleCount++;
-        } else if (gender === "female") {
-          femaleCount++;
-        }
-      }
-    }
-
-    document.getElementById("maleCount").innerText = maleCount;
-    document.getElementById("femaleCount").innerText = femaleCount;
-    document.getElementById("totalCount").innerText = maleCount + femaleCount;
-  }
-
-  // Function to filter staff based on selected occupation
-  function filterStaff() {
-    const selectedOccupation = document.getElementById("occupationSelect").value;
-    const rows = document.getElementById("stafftable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-    for (let i = 0; i < rows.length; i++) {
-      const occupation = rows[i].getElementsByTagName("td")[4].innerText.toLowerCase();
-      if (selectedOccupation === "" || selectedOccupation === occupation) {
-        rows[i].style.display = "";
-      } else {
-        rows[i].style.display = "none";
-      }
-    }
-    updateSummary();
-    resetSerialNumbers();
-  }
-
-  // Function to reset serial numbers after filtering
-  function resetSerialNumbers() {
-    const visibleRows = document.querySelectorAll("#stafftable tbody tr:not([style*='display: none'])");
-    for (let i = 0; i < visibleRows.length; i++) {
-      visibleRows[i].getElementsByTagName("td")[0].innerText = i + 1;
-    }
-  }
-
-  // Function to filter staff based on search input
-  document.getElementById("searchInput").addEventListener("keyup", function() {
-    const filter = this.value.toUpperCase();
-    const rows = document.getElementById("stafftable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-    for (let i = 0; i < rows.length; i++) {
-      const cells = rows[i].getElementsByTagName("td");
-      let found = false;
-      for (let j = 0; j < cells.length; j++) {
-        const textValue = cells[j].textContent || cells[j].innerText;
-        if (textValue.toUpperCase().indexOf(filter) > -1) {
-          found = true;
-          break;
-        }
-      }
-      if (found) {
-        rows[i].style.display = "";
-      } else {
-        rows[i].style.display = "none";
-      }
-    }
-    updateSummary();
-    resetSerialNumbers();
-  });
-
-  // Initial update of the summary table and serial numbers on page load
-  document.addEventListener("DOMContentLoaded", function() {
-    updateSummary();
-    resetSerialNumbers();
-  });
-
-  // Make rows clickable
-  document.addEventListener("DOMContentLoaded", function() {
-    const rows = document.querySelectorAll(".clickable-row");
-    rows.forEach(row => {
-      row.addEventListener("click", () => {
-        window.location.href = row.getAttribute("data-href");
-      });
-    });
-  });
-
-  // Function to sort the table
-  function sortTable(columnIndex, type, order) {
-    const table = document.getElementById("stafftable");
-    const rows = Array.from(table.rows).slice(1); // Exclude header row
-
-    rows.sort((a, b) => {
-      let cellA = a.cells[columnIndex].innerText.trim();
-      let cellB = b.cells[columnIndex].innerText.trim();
-
-      if (type === 'string') {
-        if (order === 'asc') {
-          return cellA.localeCompare(cellB);
-        } else {
-          return cellB.localeCompare(cellA);
-        }
-      } else if (type === 'gender') {
-        if (order === 'asc') {
-          return cellA.localeCompare(cellB);
-        } else {
-          return cellB.localeCompare(cellA);
-        }
-      }
-
-      if (order === 'asc') {
-        return cellA > cellB ? 1 : cellA < cellB ? -1 : 0;
-      } else {
-        return cellA < cellB ? 1 : cellA > cellB ? -1 : 0;
-      }
-    });
-
-    rows.forEach(row => table.appendChild(row));
-    resetSerialNumbers();
-  }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
-    integrity="sha384-NkU32VZyLgnbxVuSw/5CCg9zp4xA0mxZiuDAi9g4SM/LuIbr99HyrCP4KiLlXg+T"
-    crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"
-    integrity="sha384-5T5l20F6jpxmo3SiRUt7KA6uP6q/eFN6wxrbykcIcSVuW0eECCqxWOjNnlpmDYBp"
-    crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-<script>
-  // Initialize AOS
-  AOS.init();
-</script>
-
-<!-- Add this CSS for animations and coloring -->
-<style>
-  /* Define animations for table rows */
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Apply animation to table rows */
-  #stafftable tbody tr {
-    animation: fadeInUp 0.5s ease forwards;
-  }
-
-  /* Additional styling */
-  .thead-teal {
-    background-color: #4caf50;
-    color: white;
-  }
-
-  .thead-colored {
-    background-color: #1e90ff;
-    color: white;
-  }
-
-  .clickable-row {
-    cursor: pointer;
-  }
-
-  .clickable-row:hover {
-    background-color: #f0f8ff;
-  }
-
-  .sort-arrow {
-    cursor: pointer;
-    padding-left: 5px;
-    color: #ff9800;
-  }
-  
-  .form-control:focus {
-    border-color: #4caf50;
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
-  }
-</style>
-{% endblock morejs %}

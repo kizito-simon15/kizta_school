@@ -1,57 +1,383 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static widget_tweaks %}
+
+{% block title %}
+Create Expenditure
+{% endblock title %}
+
 {% block content %}
-<div class="container">
-    <h1>Create Expenditure</h1>
-    <form id="expenditureForm" method="post">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="id_category">Category:</label>
-            <select name="category" id="id_category" class="form-control">
-                {% for category in categories %}
-                <option value="{{ category.pk }}">{{ category.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="id_item_name">Item:</label>
-            <input type="text" name="item_name" id="id_item_name" class="form-control" required>
-        </div>
-        <div class="form-group">
-            <label for="id_amount">Amount:</label>
-            <input type="number" name="amount" id="id_amount" class="form-control" required>
-        </div>
-        <div class="form-group">
-            <label for="id_date">Date:</label>
-            <input type="date" name="date" id="id_date" class="form-control" required>
-        </div>
-        <div class="form-group">
-            <label for="id_description">Description:</label>
-            <textarea name="description" id="id_description" class="form-control"></textarea>
-        </div>
-        <div class="form-group">
-            <label for="id_quantity">Quantity:</label>
-            <input type="text" name="quantity" id="id_quantity" class="form-control">
-        </div>
-        <div class="form-group">
-            <label for="id_attachment">Attachment:</label>
-            <input type="file" name="attachment" id="id_attachment" class="form-control-file">
-        </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
-</div>
-<script>
-    // Function to check if the current URL contains certain text
-    function checkURL() {
-        var currentURL = window.location.href;
-        // Check if the URL contains 'expenditure'
-        if (currentURL.includes('expenditure')) {
-            // If the URL contains 'expenditure', display the form with animation
-            document.getElementById('expenditureForm').style.display = 'block';
-            // You can add animation effects here using CSS classes or JavaScript animation libraries
-        }
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+    :root {
+        --primary-color: #e67e22; /* Carrot color */
     }
 
-    // Call the function when the page loads
-    window.onload = checkURL;
+    html, body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #e1f5fe, #b3e5fc, #81d4fa);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        min-height: 100vh;
+        margin:0;
+        padding:0;
+        color:#333;
+        transition:background-color 0.5s, color 0.5s;
+    }
+
+    @keyframes gradientBG {
+        0% { background-position:0% 50%; }
+        50% { background-position:100% 50%; }
+        100% { background-position:0% 50%; }
+    }
+
+    [data-theme="dark"] {
+        color:#fff;
+    }
+
+    .container {
+        max-width: 1200px !important;
+    }
+
+    .page-header {
+        text-align: center;
+        padding:40px 20px;
+        position:relative;
+        margin-bottom:30px;
+    }
+
+    .page-header h1 {
+        font-weight:600;
+        color:#ff4081;
+        font-size:2rem;
+        display:inline-flex;
+        align-items:center;
+        gap:0.5rem;
+        animation: fadeInDown 0.8s ease forwards;
+        opacity:0;
+        transform:translateY(-20px);
+    }
+
+    h1::before {
+        content:"💸";
+    }
+
+    @keyframes fadeInDown {
+        to { opacity:1; transform:translateY(0); }
+    }
+
+    .top-actions {
+        position:absolute;
+        top:20px;
+        right:20px;
+        display:flex;
+        align-items:center;
+        gap:15px;
+        z-index:1000;
+    }
+
+    .top-actions a, .top-actions div {
+        cursor:pointer;
+        font-size:1.5em;
+        color:var(--primary-color);
+        transition:transform 0.3s,color 0.3s;
+        font-weight:600;
+        text-decoration:none;
+    }
+
+    .top-actions a:hover, .top-actions div:hover {
+        transform:scale(1.1);
+        color:#d35400;
+    }
+
+    [data-theme="dark"] .top-actions a, [data-theme="dark"] .top-actions div {
+        color:#ffcc00;
+    }
+
+    [data-theme="dark"] .top-actions a:hover, [data-theme="dark"] .top-actions div:hover {
+        color:#ffc107;
+    }
+
+    .card {
+        border:none; 
+        border-radius:20px; 
+        overflow:hidden;
+    }
+
+    .card-header {
+        border-radius:20px 20px 0 0;
+    }
+
+    .card-header h2 {
+        font-size:1.5rem; 
+        font-weight:600;
+    }
+
+    .card-body {
+        background:#f9f9f9;
+    }
+
+    [data-theme="dark"] .card-body {
+        background:#2c2c2c;
+    }
+
+    .form-control, .form-select {
+        color: deepskyblue; 
+        border-radius: 50px; 
+        border: 1px solid #ccc;
+    }
+
+    .form-control::placeholder {
+        color: #8fcceb; 
+    }
+
+    .input-group-text {
+        border-radius: 50px 0 0 50px; 
+        background: #eaf7ff; 
+        border: none;
+        font-size: 1.1rem;
+    }
+
+    input.form-control:focus, select.form-select:focus, textarea.form-control:focus {
+        border-color:#80cbc4 !important;
+        box-shadow:0 0 8px rgba(128,203,196,0.3) !important;
+    }
+
+    .submit-btn {
+        background: var(--primary-color) !important;
+        border:none;
+        border-radius:50px;
+        font-weight:600;
+        padding:12px 24px;
+        font-size:0.9rem;
+        transition: background 0.3s, transform 0.3s;
+        cursor:pointer;
+        display:inline-flex;
+        align-items:center;
+        gap:0.5rem;
+    }
+
+    .submit-btn:hover {
+        background:#d35400 !important;
+        transform:translateY(-2px);
+        box-shadow:0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .submit-btn i {
+        font-size:1rem;
+    }
+
+    .btn-secondary {
+        border-radius:50px;
+        font-weight:600;
+        transition:transform 0.3s;
+    }
+
+    .btn-secondary:hover {
+        transform:translateY(-2px);
+        box-shadow:0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .text-muted {
+        font-size:0.85rem;
+    }
+
+    /* Preview Container for Uploaded File */
+    #preview-container {
+        margin-top:10px;
+    }
+
+    #preview-container img {
+        max-width:100px;
+        border-radius:10px;
+        margin-right:10px;
+    }
+
+    #preview-container .file-name {
+        font-size:0.9rem;
+        color:#333;
+        display:inline-block;
+        margin-top:10px;
+    }
+
+    @media(max-width:600px) {
+        .page-header h1 {
+            font-size:1.5rem;
+        }
+        input.form-control, select.form-select, textarea.form-control {
+            font-size:0.9rem;
+        }
+        .submit-btn {
+            font-size:0.85rem;
+            padding:10px 20px;
+        }
+        .input-group-text {
+            font-size:1rem;
+        }
+        #preview-container img {
+            max-width:80px;
+        }
+    }
+</style>
+
+<div class="container my-5">
+    <div class="page-header">
+        <h1>Create Expenditure</h1>
+        <div class="top-actions">
+            <!-- Back to Category List -->
+            <a href="{% url 'category_list' %}" title="Back to Categories">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <!-- Home/dash link -->
+            <a href="{% url 'select_link' %}" title="Return to Dashboard">
+                <i class="fas fa-home"></i>
+            </a>
+            <!-- Theme toggle -->
+            <div class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                <i class="fas fa-sun"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm" style="border:none; border-radius:20px; overflow:hidden;">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0"><i class="fas fa-money-check-alt" style="margin-right:0.5rem;"></i>Expenditure Details</h2>
+        </div>
+        <div class="card-body">
+            <form id="expenditureForm" method="post" enctype="multipart/form-data" class="row g-4" style="font-size:0.95rem;">
+                {% csrf_token %}
+
+                <!-- Row 1: Category, Item, Amount -->
+                <div class="col-md-4">
+                    <label for="id_category" class="form-label fw-bold">Category</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-list-ul"></i></span>
+                        <select name="category" id="id_category" class="form-select" required>
+                            {% for category in categories %}
+                            <option value="{{ category.pk }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <small class="text-muted">Select the related category.</small>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_item_name" class="form-label fw-bold">Item</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                        <input type="text" name="item_name" id="id_item_name" class="form-control" placeholder="e.g. Printer Ink" required>
+                    </div>
+                    <small class="text-muted">Item name or details.</small>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_amount" class="form-label fw-bold">Amount</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-money-bill-wave"></i></span>
+                        <input type="number" name="amount" id="id_amount" class="form-control" placeholder="e.g. 5000" required>
+                    </div>
+                    <small class="text-muted">Enter the expenditure amount.</small>
+                </div>
+
+                <!-- Row 2: Date, Quantity, Attachment -->
+                <div class="col-md-4">
+                    <label for="id_date" class="form-label fw-bold">Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        <input type="date" name="date" id="id_date" class="form-control" required>
+                    </div>
+                    <small class="text-muted">When the expenditure was made.</small>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_quantity" class="form-label fw-bold">Quantity</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-sort-numeric-up"></i></span>
+                        <input type="text" name="quantity" id="id_quantity" class="form-control" placeholder="e.g. 2 boxes">
+                    </div>
+                    <small class="text-muted">Optional: Quantity or units.</small>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_attachment" class="form-label fw-bold">Attachment</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-paperclip"></i></span>
+                        <input type="file" name="attachment" id="id_attachment" class="form-control" accept="image/*,.pdf,.doc,.docx">
+                    </div>
+                    <small class="text-muted">Optional: Upload a receipt or document.</small>
+                    <div id="preview-container"></div>
+                </div>
+
+                <!-- Row 3: Description (full width) -->
+                <div class="col-12">
+                    <label for="id_description" class="form-label fw-bold">Description</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+                        <textarea name="description" id="id_description" class="form-control" rows="3" placeholder="Additional details..."></textarea>
+                    </div>
+                    <small class="text-muted">Optional: Provide more context or notes.</small>
+                </div>
+
+                <div class="col-12 text-end mt-4">
+                    <button type="submit" class="submit-btn px-4 py-2">
+                        <i class="fas fa-plus"></i> Submit
+                    </button>
+                    <a class="btn btn-secondary px-4 py-2 ms-2" href="{% url 'category_list' %}" style="font-weight:600; border-radius:50px;">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const htmlElement = document.documentElement;
+
+    function toggleTheme() {
+        const currentTheme = htmlElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        htmlElement.setAttribute('data-theme', newTheme);
+        themeToggle.innerHTML = newTheme === 'dark' 
+            ? '<i class="fas fa-moon"></i>' 
+            : '<i class="fas fa-sun"></i>';
+        localStorage.setItem('theme', newTheme);
+    }
+
+    themeToggle.addEventListener('click', toggleTheme);
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        htmlElement.setAttribute('data-theme', savedTheme);
+        themeToggle.innerHTML = savedTheme === 'dark'
+            ? '<i class="fas fa-moon"></i>'
+            : '<i class="fas fa-sun"></i>';
+    }
+
+    // File preview
+    const attachmentInput = document.getElementById('id_attachment');
+    const previewContainer = document.getElementById('preview-container');
+
+    attachmentInput.addEventListener('change', function() {
+        previewContainer.innerHTML = '';
+        const file = this.files[0];
+        if (!file) return;
+
+        if (file.type.startsWith('image/')) {
+            // Preview image
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.alt = 'Preview';
+            previewContainer.appendChild(img);
+        } else {
+            // Show file name for non-image
+            const fileName = document.createElement('div');
+            fileName.classList.add('file-name');
+            fileName.textContent = `Selected file: ${file.name}`;
+            previewContainer.appendChild(fileName);
+        }
+    });
 </script>
 {% endblock %}

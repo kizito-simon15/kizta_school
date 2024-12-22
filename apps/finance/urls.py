@@ -8,7 +8,6 @@ from .views import (
     ReceiptCreateView,
     ReceiptUpdateView,
     bulk_invoice,
-    #salary invoice view
     SalaryInvoiceListView,
     SalaryInvoiceDetailView,
     SalaryInvoiceCreateView,
@@ -30,10 +29,12 @@ from .views import (
     get_uniform_price,
     get_student_class,
     initiate_payment, 
-    mpesa_callback
+    mpesa_callback,
+    student_search
 )
-#urls for Student Invoice
+
 urlpatterns = [
+    # Student Invoice URLs
     path("list/", InvoiceListView.as_view(), name="invoice-list"),
     path("create/", InvoiceCreateView.as_view(), name="invoice-create"),
     path("<int:pk>/detail/", InvoiceDetailView.as_view(), name="invoice-detail"),
@@ -43,7 +44,8 @@ urlpatterns = [
     path('generate_receipt/<int:pk>/', generate_receipt, name='generate_receipt'),
     path("receipt/<int:pk>/update/", ReceiptUpdateView.as_view(), name="receipt-update"),
     path("bulk-invoice/", bulk_invoice, name="bulk-invoice"),
-    #urls for SalaryInvoice
+
+    # Salary Invoice URLs
     path('invoices/', SalaryInvoiceListView.as_view(), name='salary-invoice-list'),
     path('search-students/', SearchStudents.as_view(), name='search_students'),
     path('invoices/print/', print_pdf, name='print-pdf'),
@@ -54,12 +56,15 @@ urlpatterns = [
     path('invoices/<int:pk>/update/', SalaryInvoiceUpdateView.as_view(), name='salary-invoice-update'),
     path('invoices/<int:pk>/delete/', SalaryInvoiceDeleteView.as_view(), name='salary-invoice-delete'),
     path('receipt/', receipt_view, name='receipt'),
+    
+    # Uniforms
     path('uniforms/', uniform_list, name='uniform_list'),
     path('uniforms/create/', uniform_create, name='uniform_create'),
     path('uniforms/<int:pk>/update/', uniform_update, name='uniform_update'),
     path('uniforms/<int:pk>/delete/', uniform_delete, name='uniform_delete'),
     path('uniforms/<int:student_id>/detail/', uniform_detail, name='uniform_detail'),
 
+    # Student Uniforms
     path('student_uniforms/', student_uniform_list, name='student_uniform_list'),
     path('student_uniforms/create/<int:student_id>/', student_uniform_create, name='student_uniform_create'),
     path('student_uniforms/<int:pk>/update/', student_uniform_update, name='student_uniform_update'),
@@ -72,7 +77,13 @@ urlpatterns = [
     path('uniformtypes/<int:pk>/edit/', UniformTypeUpdateView.as_view(), name='uniformtype_edit'),
     path('uniformtypes/<int:pk>/delete/', UniformTypeDeleteView.as_view(), name='uniformtype_delete'),
     path('uniform/get_price/', get_uniform_price, name='get_uniform_price'),
-    path('uniform/get_student_class/', get_student_class, name='get_student_class'),
+
+    # AJAX endpoints for modernized invoice form
+    path('student-search/', student_search, name='student-search'),
+    path('get-student-class/', get_student_class, name='get-student-class'),
+
+    # Payment
     path('initiate-payment/', initiate_payment, name='initiate_payment'),
     path('mpesa-callback/', mpesa_callback, name='mpesa_callback'),
 ]
+

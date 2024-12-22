@@ -1,12 +1,91 @@
-<!-- expenditures/expenditure_invoice_form.html -->
+{% extends "base.html" %}
+{% load widget_tweaks %}
 
-{% extends 'base.html' %} <!-- Extend from your base template -->
+{% block title %}
+Create Expenditure Invoice
+{% endblock title %}
 
 {% block content %}
-  <h2>Create Expenditure Invoice</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }} <!-- Render form fields as paragraphs -->
-    <button type="submit" class="btn btn-primary">Submit</button>
-  </form>
+<style>
+    .form-container {
+        max-width:600px;
+        margin:0 auto;
+        background:#fff;
+        border-radius:10px;
+        box-shadow:0 2px 15px rgba(0,0,0,0.05);
+        padding:30px;
+        animation:fadeIn 0.8s ease forwards;
+        opacity:0;
+        transform:translateY(20px);
+    }
+
+    @keyframes fadeIn {
+        to {
+            opacity:1;
+            transform:translateY(0);
+        }
+    }
+
+    /* Make sure the input fields are clearly visible */
+    .form-control {
+        background: #ffffa0 !important; /* Bright yellow background */
+        border: 2px solid red !important; /* Red border for visibility */
+        color: #000 !important;
+        border-radius:50px;
+        font-size:0.9rem;
+        padding:10px 15px;
+    }
+
+    .input-group-text {
+        background: #eaf7ff;
+        border:none;
+        font-size:1.1rem;
+        color:#00acc1;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+    }
+
+    .input-group {
+        border-radius:50px;
+        overflow:hidden;
+    }
+</style>
+
+<div class="container my-5">
+    <div class="form-container">
+        <h2>Create Expenditure Invoice</h2>
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form.visible_fields %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}" class="fw-bold mb-1">
+                        {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                    </label>
+                    <div class="input-group">
+                        {% if field.name == "date" %}
+                            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        {% elif field.name == "amount" %}
+                            <span class="input-group-text"><i class="fas fa-money-bill-wave"></i></span>
+                        {% elif field.name == "description" %}
+                            <span class="input-group-text"><i class="fas fa-comment-dots"></i></span>
+                        {% else %}
+                            <span class="input-group-text"><i class="fas fa-pen"></i></span>
+                        {% endif %}
+                        {{ field|add_class:"form-control" }}
+                    </div>
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <small class="text-danger">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+</div>
 {% endblock %}

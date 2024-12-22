@@ -5,8 +5,9 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.forms import widgets
 from django.http import HttpResponse
 from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 import csv
-
+from .forms import StudentForm 
 from django.views.generic import DetailView, ListView, View
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from .models import Student, StudentBulkUpload
@@ -23,6 +24,8 @@ from .models import Student
 from apps.staffs.models import Staff
 from apps.result.models import Result, StudentInfos
 
+
+
 class StudentListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = Student
     template_name = "students/student_list.html"
@@ -31,29 +34,31 @@ class StudentListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     context_object_name = "students"
 
     def get_queryset(self):
-        return Student.objects.filter(current_status="active", completed=False)
+        # Show only non-completed students
+        return Student.objects.filter(completed=False)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Get all classes from the database
         context['student_classes'] = StudentClass.objects.all()
+        # Optionally, pre-calculate totals for male/female/overall if you want initial KPIs
+        context['total_male'] = Student.objects.filter(gender='male', completed=False).count()
+        context['total_female'] = Student.objects.filter(gender='female', completed=False).count()
+        context['overall_total'] = Student.objects.filter(completed=False).count()
         return context
 
 
-class InactiveStudentsView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    model = Student
-    template_name = "students/inactive_student_list.html"
-    permission_required = 'students.view_student_list'
-    permission_denied_message = 'Access Denied'
-    context_object_name = "students"
+class ActiveStudentListView(StudentListView):
+    def get_queryset(self):
+        return Student.objects.filter(current_status="active", completed=False)
 
+class InactiveStudentsView(StudentListView):
+    """
+    A view to list all inactive students.
+    """
     def get_queryset(self):
         return Student.objects.filter(current_status="inactive", completed=False)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['student_classes'] = StudentClass.objects.all()
-        context['staff_list'] = Staff.objects.filter(current_status="inactive")
-        return context
 
 class SelectAlluiClassView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'students.change_student'
@@ -172,96 +177,61 @@ class StudentDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView)
         context["payments"] = Invoice.objects.filter(student=self.object)
         return context
 
-from django.shortcuts import render
-from django.urls import reverse_lazy
-from django.views.generic import CreateView
-from django.contrib.messages.views import SuccessMessageMixin
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django import forms
-from .models import Student
-from apps.corecode.models import StudentClass
 
-
-class StudentCreateView(LoginRequiredMixin, PermissionRequiredMixin, SuccessMessageMixin, CreateView):
+class StudentCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Student
-    fields = "__all__"  # Include all fields in the form
+    form_class = StudentForm  # Use the custom form
     success_message = "New student successfully added."
     permission_required = 'students.add_student'
     permission_denied_message = 'Access Denied'
 
     def get_context_data(self, **kwargs):
-        print("DEBUG: Entering get_context_data")
         context = super().get_context_data(**kwargs)
         context["student_classes"] = StudentClass.objects.all()
-        print(f"DEBUG: student_classes count = {context['student_classes'].count()}")
-        print("DEBUG: Exiting get_context_data")
         return context
 
-    def get_form(self):
-        print("DEBUG: Entering get_form")
-        form = super(StudentCreateView, self).get_form()
-        form.fields["date_of_birth"].widget = forms.DateInput(attrs={"type": "date"})
-        form.fields["address"].widget = forms.Textarea(attrs={"rows": 2})
-        form.fields["others"].widget = forms.Textarea(attrs={"rows": 2})
-        print(f"DEBUG: Form fields = {form.fields.keys()}")
-        print("DEBUG: Exiting get_form")
-        return form
-
     def form_valid(self, form):
-        print("DEBUG: Entering form_valid")
-        print(f"DEBUG: Form data = {form.cleaned_data}")
-        response = super().form_valid(form)
-        print("DEBUG: Form successfully saved")
-        print(f"DEBUG: Saved instance = {self.object}")
-        print("DEBUG: Exiting form_valid")
-        return response
+        self.log_debug_info("Form is valid", form.cleaned_data)
+        return super().form_valid(form)
 
     def form_invalid(self, form):
-        print("DEBUG: Entering form_invalid")
-        print(f"DEBUG: Form errors = {form.errors}")
-        response = super().form_invalid(form)
-        print("DEBUG: Exiting form_invalid")
-        return response
+        self.log_debug_info("Form is invalid", form.errors)
+        return super().form_invalid(form)
 
     def get_success_url(self):
-        print("DEBUG: Entering get_success_url")
-        url = reverse_lazy('student-list')
-        print(f"DEBUG: Success URL = {url}")
-        print("DEBUG: Exiting get_success_url")
-        return url
+        return reverse_lazy('student-list')
 
-class StudentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
+    def log_debug_info(self, message, data):
+        """ Optional: Use Django's logging framework in production """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"DEBUG: {message}")
+        logger.debug(f"DEBUG: Data = {data}")
+
+class StudentUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Student
-    fields = "__all__"
+    form_class = StudentForm  # Use the custom form
     success_message = "Record successfully updated."
     permission_required = 'students.change_student'
     permission_denied_message = 'Access Denied'
 
-
     def get_context_data(self, **kwargs):
-        print("DEBUG: Entering get_context_data")
         context = super().get_context_data(**kwargs)
         context["student_classes"] = StudentClass.objects.all()
-        print(f"DEBUG: student_classes count = {context['student_classes'].count()}")
-        print("DEBUG: Exiting get_context_data")
         return context
-    
-    def get_form(self):
-        form = super(StudentUpdateView, self).get_form()
-        form.fields["date_of_birth"].widget = widgets.DateInput(attrs={"type": "date"})
-        form.fields["date_of_admission"].widget = widgets.DateInput(
-            attrs={"type": "date"}
-        )
-        form.fields["address"].widget = widgets.Textarea(attrs={"rows": 2})
-        form.fields["others"].widget = widgets.Textarea(attrs={"rows": 2})
-        return form
 
+    def form_valid(self, form):
+        self.log_debug_info("Form is valid", form.cleaned_data)
+        return super().form_valid(form)
 
-class StudentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    def form_invalid(self, form):
+        self.log_debug_info("Form is invalid", form.errors)
+        return super().form_invalid(form)
+
+class StudentDeleteView(LoginRequiredMixin, DeleteView):
     model = Student
     success_url = reverse_lazy("student-list")
     permission_required = 'students.delete_student'
-
 
 class StudentBulkUploadView(LoginRequiredMixin, PermissionRequiredMixin, SuccessMessageMixin, CreateView):
     model = StudentBulkUpload

@@ -1,334 +1,458 @@
-{% extends 'base.html' %}
-
-{% block title %}
-<title>
-    {% if object %}
-        Update {{ object }}
-    {% else %}
-        Add New Staff
-    {% endif %}
-</title>
-{% endblock title %}
+{% extends "base.html" %}
+{% load form_tags %}
 
 {% block content %}
 <style>
-    body {
-        font-family: 'Arial', sans-serif;
-        background-color: #f3e5f5;
-        margin: 0;
-        padding: 0;
+    .form-control, .form-select {
+        color: deepskyblue; 
+        border-radius: 50px; 
+        border: 1px solid #ccc;
     }
-
-    .form-container {
-        max-width: 800px;
-        margin: 50px auto;
-        background: linear-gradient(135deg, #f8bbd0, #ede7f6);
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    .form-control::placeholder {
+        color: #8fcceb; 
     }
-
-    .form-header {
-        font-size: 2.2rem;
-        color: #8e24aa;
-        margin-bottom: 30px;
-        text-align: center;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-group label {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #512da8;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-    }
-
-    .form-group label i {
-        margin-right: 10px;
-        font-size: 1.4rem;
-        color: #6a1b9a;
-    }
-
-    input,
-    textarea,
-    select {
-        width: 100%;
-        padding: 12px;
-        border-radius: 12px;
-        border: 2px solid #d32f2f;
-        font-size: 1rem;
-        background-color: #fce4ec;
-        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
-    }
-
-    input[type="date"]::-webkit-inner-spin-button,
-    input[type="date"]::-webkit-calendar-picker-indicator {
-        display: none;
-        -webkit-appearance: none;
-    }
-
-    .age-display {
-        font-size: 1rem;
-        color: #8e24aa;
-        font-weight: bold;
-        margin-top: -10px;
-        margin-bottom: 15px;
-        text-align: right;
-    }
-
-    .btn-submit {
-        background: linear-gradient(90deg, #8e24aa, #6a1b9a);
-        color: white;
-        padding: 15px 30px;
-        font-size: 1.2rem;
-        border-radius: 50px;
+    .input-group-text {
+        border-radius: 50px 0 0 50px; 
+        background: #eaf7ff; 
         border: none;
-        cursor: pointer;
-        transition: transform 0.3s ease-in-out;
+        font-size: 1.1rem;
     }
 
-    .btn-submit:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(142, 36, 170, 0.3);
+    /* Example icon color styles */
+    .icon-status { color: #009688; }        
+    .icon-firstname { color: #3f51b5; }     
+    .icon-middle { color: #9c27b0; }        
+    .icon-surname { color: #e91e63; }       
+    .icon-gender { color: #ff9800; }        
+    .icon-dob { color: #795548; }           
+    .icon-doa { color: #4caf50; }           
+    .icon-mobile { color: #2196f3; }        
+    .icon-occupation { color: #00bcd4; }    
+    .icon-salary { color: #673ab7; }        
+    .icon-address { color: #8bc34a; }       
+    .icon-guarantor { color: #ff5722; }     
+    .icon-duration { color: #607d8b; }      
+    .icon-nida { color: #9e9e9e; }          
+    .icon-tin { color: #f44336; }           
+    .icon-startdate { color: #3f51b5; }     
+    .icon-enddate { color: #009688; }       
+    .icon-photo { color: #ff9800; }         
+    .icon-others { color: #4caf50; }
+
+    .container {
+        max-width: 1200px !important;
     }
 </style>
 
-<div class="form-container">
-    <div class="form-header">
-        {% if object %}
-            Update {{ object }}
-        {% else %}
-            Add New Staff
-        {% endif %}
-    </div>
-
-    <form action="" method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        <!-- Current Status -->
-        <div class="form-group">
-            <label for="current_status">
-                <i class="fas fa-user-check"></i> Current Status
-            </label>
-            <select name="current_status" id="current_status">
-                <option value="active" {% if object and object.current_status == "active" %}selected{% endif %}>Active</option>
-                <option value="inactive" {% if object and object.current_status == "inactive" %}selected{% endif %}>Inactive</option>
-            </select>
-        </div>
-
-        <!-- First Name -->
-        <div class="form-group">
-            <label for="firstname">
-                <i class="fas fa-user"></i> First Name
-            </label>
-            <input type="text" name="firstname" id="firstname" value="{{ object.firstname|default_if_none:'' }}">
-        </div>
-
-        <!-- Middle Name -->
-        <div class="form-group">
-            <label for="middle_name">
-                <i class="fas fa-user"></i> Middle Name
-            </label>
-            <input type="text" name="middle_name" id="middle_name" value="{{ object.middle_name|default_if_none:'' }}">
-        </div>
-
-        <!-- Surname -->
-        <div class="form-group">
-            <label for="surname">
-                <i class="fas fa-user-circle"></i> Surname
-            </label>
-            <input type="text" name="surname" id="surname" value="{{ object.surname|default_if_none:'' }}">
-        </div>
-
-        <!-- Gender -->
-        <div class="form-group">
-            <label for="gender">
-                <i class="fas fa-venus-mars"></i> Gender
-            </label>
-            <select name="gender" id="gender">
-                <option value="male" {% if object and object.gender == "male" %}selected{% endif %}>Male</option>
-                <option value="female" {% if object and object.gender == "female" %}selected{% endif %}>Female</option>
-            </select>
-        </div>
-
-        <!-- Date of Birth -->
-        <div class="form-group">
-            <label for="date_of_birth">
-                <i class="fas fa-calendar-alt"></i> Date of Birth
-            </label>
-            <input type="date" name="date_of_birth" id="date_of_birth" value="{{ object.date_of_birth|default_if_none:'' }}">
-            <div class="age-display" id="age-display">Age: --</div>
-        </div>
-
-        <!-- Date of Admission -->
-        <div class="form-group">
-            <label for="date_of_admission">
-                <i class="fas fa-calendar-check"></i> Date of Admission
-            </label>
-            <input type="date" name="date_of_admission" id="date_of_admission" value="{{ object.date_of_admission|default_if_none:'' }}">
-        </div>
-
-        <!-- Contract Start Date -->
-        <div class="form-group">
-            <label for="contract_start_date">
-                <i class="fas fa-play"></i> Contract Start Date
-            </label>
-            <input type="date" name="contract_start_date" id="contract_start_date" value="{{ object.contract_start_date|default_if_none:'' }}">
-        </div>
-
-        <!-- Contract Duration -->
-        <div class="form-group">
-            <label for="contract_duration">
-                <i class="fas fa-clock"></i> Contract Duration (Years)
-            </label>
-            <input type="text" name="contract_duration" id="contract_duration" value="{{ object.contract_duration|default_if_none:'' }}">
-        </div>
-
-        <!-- Contract End Date -->
-        <div class="form-group">
-            <label for="contract_end_date">
-                <i class="fas fa-stop"></i> Contract End Date
-            </label>
-            <input type="date" name="contract_end_date" id="contract_end_date" value="{{ object.contract_end_date|default_if_none:'' }}">
-        </div>
-
-        <!-- Salary -->
-        <div class="form-group">
-            <label for="salary">
-                <i class="fas fa-money-bill-alt"></i> Salary
-            </label>
-            <input type="number" step="0.01" name="salary" id="salary" value="{{ object.salary|default_if_none:'' }}">
-        </div>
-
-        <!-- Occupation -->
-        <div class="form-group">
-            <label for="occupation">
-                <i class="fas fa-briefcase"></i> Occupation
-            </label>
-            <select name="occupation" id="occupation">
-                <option value="teacher" {% if object and object.occupation == "teacher" %}selected{% endif %}>Teacher</option>
-                <option value="administrator" {% if object and object.occupation == "administrator" %}selected{% endif %}>Administrator</option>
-                <option value="support_staff" {% if object and object.occupation == "support_staff" %}selected{% endif %}>Support Staff</option>
-            </select>
-        </div>
-
-        <!-- Mobile Number -->
-        <div class="form-group">
-            <label for="mobile_number">
-                <i class="fas fa-phone"></i> Mobile Number
-            </label>
-            <input type="text" name="mobile_number" id="mobile_number" value="{{ object.mobile_number|default_if_none:'+255' }}">
-        </div>
-
-        <!-- Address -->
-        <div class="form-group">
-            <label for="address">
-                <i class="fas fa-map-marker-alt"></i> Address
-            </label>
-            <textarea name="address" id="address">{{ object.address|default_if_none:'' }}</textarea>
-        </div>
-
-        <!-- NIDA ID -->
-        <div class="form-group">
-            <label for="nida_id">
-                <i class="fas fa-id-card"></i> NIDA ID
-            </label>
-            <input type="text" name="nida_id" id="nida_id" value="{{ object.nida_id|default_if_none:'' }}">
-        </div>
-
-        <!-- TIN Number -->
-        <div class="form-group">
-            <label for="tin_number">
-                <i class="fas fa-file-invoice"></i> TIN Number
-            </label>
-            <input type="text" name="tin_number" id="tin_number" value="{{ object.tin_number|default_if_none:'' }}">
-        </div>
-
-        <!-- Guarantor -->
-        <div class="form-group">
-            <label for="guarantor">
-                <i class="fas fa-user-shield"></i> Guarantor
-            </label>
-            <input type="text" name="guarantor" id="guarantor" value="{{ object.guarantor|default_if_none:'' }}">
-        </div>
-
-        <!-- Passport Photo -->
-        <div class="form-group">
-            <label for="passport_photo">
-                <i class="fas fa-camera"></i> Passport Photo
-            </label>
-            <input type="file" name="passport_photo" id="passport_photo">
-        </div>
-
-        <!-- Additional Information -->
-        <div class="form-group">
-            <label for="others">
-                <i class="fas fa-info-circle"></i> Additional Information
-            </label>
-            <textarea name="others" id="others">{{ object.others|default_if_none:'' }}</textarea>
-        </div>
-
-        <!-- Submit Button -->
-        <div class="form-group">
-            <button type="submit" class="btn-submit">
-                <i class="fas fa-save"></i>
-                {% if object %}
-                    Update Staff
+<div class="container my-5">
+    <div class="card shadow-sm" style="border:none; border-radius:20px; overflow:hidden;">
+        <div class="card-header bg-primary text-white" style="border-radius:20px 20px 0 0;">
+            <h2 class="mb-0" style="font-size:1.5rem; font-weight:600;">
+                {% if form.instance.pk %}
+                    <i class="fas fa-user-edit"></i> Edit Staff
                 {% else %}
-                    Add Staff
+                    <i class="fas fa-user-plus"></i> Add New Staff
                 {% endif %}
-            </button>
+            </h2>
         </div>
-    </form>
+        <div class="card-body" style="background: #f9f9f9;">
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-4">
+                    <strong>Form Errors:</strong>
+                    <ul class="mb-0">
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" class="row g-4" style="font-size:0.95rem;">
+                {% csrf_token %}
+
+                <!-- Row 1: Current Status, Firstname, Middle Name -->
+                <div class="col-md-4">
+                    <label for="id_current_status" class="form-label fw-bold">Current Status <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-toggle-on icon-status"></i></span>
+                        {{ form.current_status|add_class:"form-select" }}
+                    </div>
+                    {% if form.current_status.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.current_status.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">Choose Active or Inactive</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_firstname" class="form-label fw-bold">First Name <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user icon-firstname"></i></span>
+                        {{ form.firstname|add_class:"form-control" }}
+                    </div>
+                    {% if form.firstname.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.firstname.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">e.g. John</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_middle_name" class="form-label fw-bold">Middle Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user-tag icon-middle"></i></span>
+                        {{ form.middle_name|add_class:"form-control" }}
+                    </div>
+                    {% if form.middle_name.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.middle_name.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">Optional</small>
+                    {% endif %}
+                </div>
+
+                <!-- Row 2: Surname, Gender, Date of Birth -->
+                <div class="col-md-4">
+                    <label for="id_surname" class="form-label fw-bold">Surname <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user-circle icon-surname"></i></span>
+                        {{ form.surname|add_class:"form-control" }}
+                    </div>
+                    {% if form.surname.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.surname.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">e.g. Doe</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_gender" class="form-label fw-bold">Gender <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-venus-mars icon-gender"></i></span>
+                        {{ form.gender|add_class:"form-select" }}
+                    </div>
+                    {% if form.gender.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.gender.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">Select Male or Female</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_date_of_birth" class="form-label fw-bold">Date of Birth <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-birthday-cake icon-dob"></i></span>
+                        {{ form.date_of_birth|add_class:"form-control" }}
+                    </div>
+                    {% if form.date_of_birth.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.date_of_birth.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">YYYY-MM-DD</small>
+                    {% endif %}
+                </div>
+
+                <!-- Row 3: Date of Admission, Mobile Number, Occupation -->
+                <div class="col-md-4">
+                    <label for="id_date_of_admission" class="form-label fw-bold">Date of Admission <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-plus icon-doa"></i></span>
+                        {{ form.date_of_admission|add_class:"form-control" }}
+                    </div>
+                    {% if form.date_of_admission.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.date_of_admission.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">When staff joined</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_mobile_number" class="form-label fw-bold">Mobile Number <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-phone icon-mobile"></i></span>
+                        {{ form.mobile_number|add_class:"form-control" }}
+                    </div>
+                    {% if form.mobile_number.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.mobile_number.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">+255XXXXXXXXX</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_occupation" class="form-label fw-bold">Occupation</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-briefcase icon-occupation"></i></span>
+                        {{ form.occupation|add_class:"form-select" }}
+                    </div>
+                    {% if form.occupation.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.occupation.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">Select role if any</small>
+                    {% endif %}
+                </div>
+
+                <!-- Row 4: Salary, Address, Guarantor -->
+                <div class="col-md-4">
+                    <label for="id_salary" class="form-label fw-bold">Salary (TZS)</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-money-bill-wave icon-salary"></i></span>
+                        {{ form.salary|add_class:"form-control" }}
+                    </div>
+                    {% if form.salary.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.salary.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">e.g. 500000.00</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_address" class="form-label fw-bold">Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-map-marker-alt icon-address"></i></span>
+                        {{ form.address|add_class:"form-control" }}
+                    </div>
+                    {% if form.address.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.address.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">e.g. 123 Apple St</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_guarantor" class="form-label fw-bold">Guarantor</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-shield-alt icon-guarantor"></i></span>
+                        {{ form.guarantor|add_class:"form-control" }}
+                    </div>
+                    {% if form.guarantor.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.guarantor.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">Emergency contact</small>
+                    {% endif %}
+                </div>
+
+                <!-- Row 5: Contract Duration, NIDA ID, TIN Number -->
+                <div class="col-md-4">
+                    <label for="id_contract_duration" class="form-label fw-bold">Contract Duration</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-clock icon-duration"></i></span>
+                        {{ form.contract_duration|add_class:"form-control" }}
+                    </div>
+                    {% if form.contract_duration.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.contract_duration.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">e.g. 2 years or 6 months</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_nida_id" class="form-label fw-bold">NIDA ID</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-id-card icon-nida"></i></span>
+                        {{ form.nida_id|add_class:"form-control" }}
+                    </div>
+                    {% if form.nida_id.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.nida_id.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">National ID number</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_tin_number" class="form-label fw-bold">TIN Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-file-invoice-dollar icon-tin"></i></span>
+                        {{ form.tin_number|add_class:"form-control" }}
+                    </div>
+                    {% if form.tin_number.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.tin_number.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">Tax ID number</small>
+                    {% endif %}
+                </div>
+
+                <!-- Row 6: Contract Start Date, Contract End Date, Passport Photo -->
+                <div class="col-md-4">
+                    <label for="id_contract_start_date" class="form-label fw-bold">Contract Start Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt icon-startdate"></i></span>
+                        {{ form.contract_start_date|add_class:"form-control" }}
+                    </div>
+                    {% if form.contract_start_date.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.contract_start_date.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">When contract begins</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_contract_end_date" class="form-label fw-bold">Contract End Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-check icon-enddate"></i></span>
+                        {{ form.contract_end_date|add_class:"form-control" }}
+                    </div>
+                    {% if form.contract_end_date.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.contract_end_date.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">Auto-calculated if duration is set</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <label for="id_passport_photo" class="form-label fw-bold">Passport Photo</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-image icon-photo"></i></span>
+                        {{ form.passport_photo|add_class:"form-control" }}
+                    </div>
+                    {% if form.passport_photo.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.passport_photo.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">Upload .jpg or .png</small>
+                    {% endif %}
+                </div>
+
+                <!-- Row 7: Others -->
+                <div class="col-12">
+                    <label for="id_others" class="form-label fw-bold">Other Details</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-info-circle icon-others"></i></span>
+                        {{ form.others|add_class:"form-control" }}
+                    </div>
+                    {% if form.others.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.others.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="text-muted">Provide any additional notes or information here.</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-12 text-end mt-4">
+                    <button type="submit" class="btn btn-success px-4 py-2" style="font-weight:600; border-radius:50px;">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <a class="btn btn-secondary px-4 py-2 ms-2" href="{% url 'staff-list' %}" style="font-weight:600; border-radius:50px;">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const dateOfBirthInput = document.getElementById("date_of_birth");
-        const ageDisplay = document.getElementById("age-display");
-        const durationField = document.getElementById("contract_duration");
-        const startDateField = document.getElementById("contract_start_date");
-        const endDateField = document.getElementById("contract_end_date");
+document.addEventListener('DOMContentLoaded', function() {
+    const contractDurationInput = document.getElementById('id_contract_duration');
+    const contractStartDateInput = document.getElementById('id_contract_start_date');
+    const contractEndDateInput = document.getElementById('id_contract_end_date');
 
-        // Calculate age based on DOB
-        function calculateAge(dob) {
-            const today = new Date();
-            const birthDate = new Date(dob);
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDifference = today.getMonth() - birthDate.getMonth();
+    function updateContractEndDate() {
+        const startValue = contractStartDateInput.value;
+        const durationValue = contractDurationInput.value.trim().toLowerCase();
+        if (!startValue || !durationValue) return;
 
-            if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-            }
-            return age;
+        const startDate = new Date(startValue);
+        if (isNaN(startDate.getTime())) return;
+
+        let years = 0, months = 0;
+
+        if (durationValue.includes('year')) {
+            const match = durationValue.match(/(\d+)/);
+            if (match) years = parseInt(match[1]);
+        } else if (durationValue.includes('month')) {
+            const match = durationValue.match(/(\d+)/);
+            if (match) months = parseInt(match[1]);
         }
 
-        dateOfBirthInput.addEventListener("input", function () {
-            const dob = dateOfBirthInput.value;
-            if (dob) {
-                const age = calculateAge(dob);
-                ageDisplay.textContent = `Age: ${age}`;
-            } else {
-                ageDisplay.textContent = "Age: --";
-            }
-        });
+        if (years > 0) {
+            startDate.setFullYear(startDate.getFullYear() + years);
+        }
+        if (months > 0) {
+            startDate.setMonth(startDate.getMonth() + months);
+        }
 
-        // Calculate contract end date based on duration
-        durationField.addEventListener("input", function () {
-            let duration = parseInt(durationField.value);
-            if (!isNaN(duration) && startDateField.value) {
-                let startDate = new Date(startDateField.value);
-                let endDate = new Date(startDate.setFullYear(startDate.getFullYear() + duration));
-                endDateField.value = endDate.toISOString().split("T")[0]; // Format as yyyy-mm-dd
-            }
-        });
-    });
+        const yyyy = startDate.getFullYear();
+        const mm = String(startDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(startDate.getDate()).padStart(2, '0');
+        contractEndDateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    contractDurationInput.addEventListener('input', updateContractEndDate);
+    contractStartDateInput.addEventListener('change', updateContractEndDate);
+});
 </script>
-{% endblock content %}
+{% endblock %}

@@ -2,8 +2,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.conf import settings
-from apps.students.models import Student
-from apps.staffs.models import Staff  # Import Staff model
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -23,8 +21,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=10, unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    language = models.CharField(max_length=10, choices=settings.LANGUAGES, default='en')  # Add this line
-    profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)  # Add this line
+    language = models.CharField(
+        max_length=10, 
+        choices=settings.LANGUAGES, 
+        default='en'
+    )
+    profile_picture = models.ImageField(
+        upload_to='profile_pics/', 
+        null=True, 
+        blank=True
+    )
 
     objects = CustomUserManager()
 
@@ -34,19 +40,44 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.username
 
 class ParentUser(CustomUser):
-    student = models.OneToOneField(Student, on_delete=models.CASCADE, null=True, blank=True, default=None)
+    # Use a string reference to the 'Student' model to avoid direct import
+    student = models.OneToOneField(
+        'students.Student', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True, 
+        default=None
+    )
     parent_first_name = models.CharField(max_length=200, blank=True, null=True)
     parent_middle_name = models.CharField(max_length=200, blank=True, null=True)
     parent_last_name = models.CharField(max_length=200, blank=True, null=True)
 
 class TeacherUser(CustomUser):
-    staff = models.OneToOneField(Staff, on_delete=models.CASCADE, default=None)
+    # Use a string reference to the 'Staff' model
+    staff = models.OneToOneField(
+        'staffs.Staff', 
+        on_delete=models.CASCADE, 
+        default=None
+    )
 
 class BursorUser(CustomUser):
-    staff = models.OneToOneField(Staff, on_delete=models.CASCADE, default=None)
+    staff = models.OneToOneField(
+        'staffs.Staff', 
+        on_delete=models.CASCADE, 
+        default=None
+    )
 
 class SecretaryUser(CustomUser):
-    staff = models.OneToOneField(Staff, on_delete=models.CASCADE, default=None)
+    staff = models.OneToOneField(
+        'staffs.Staff', 
+        on_delete=models.CASCADE, 
+        default=None
+    )
 
 class AcademicUser(CustomUser):
-    staff = models.OneToOneField(Staff, on_delete=models.CASCADE, default=None)
+    staff = models.OneToOneField(
+        'staffs.Staff', 
+        on_delete=models.CASCADE, 
+        default=None
+    )
+

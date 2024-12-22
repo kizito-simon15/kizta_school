@@ -1,29 +1,165 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block content-header %}
-<div class="card-header d-flex justify-content-between align-items-center bg-light shadow-sm rounded-pill">
-    <div class="card-tools">
-        <button class="btn btn-outline-secondary btn-sm rounded-pill shadow-sm" onclick="printPage()">
-            <i class="fas fa-print"></i> Print
-        </button>
-        <a href="{% url 'student-update' object.id %}" class="btn btn-outline-primary btn-sm rounded-pill shadow-sm">
-            <i class="fas fa-edit"></i> Edit
-        </a>
-        <a href="{% url 'student-delete' object.id %}" class="btn btn-outline-danger btn-sm rounded-pill shadow-sm">
-            <i class="fas fa-trash-alt"></i> Delete
-        </a>
-        <button class="btn btn-outline-secondary btn-sm rounded-pill shadow-sm" onclick="goBack()">
-            <i class="fas fa-arrow-left"></i> Back
-        </button>
-        <a href="{% url 'student-list' %}" class="btn btn-outline-info btn-sm rounded-pill shadow-sm">
-            <i class="fas fa-list"></i> Student List
-        </a>
-    </div>
-</div>
-{% endblock content-header %}
+{% block title %}
+Student Details: {{ object }}
+{% endblock title %}
 
 {% block content %}
+<style>
+    body {
+        background: #fdfbfb;
+    }
+
+    .title-section {
+        margin: 20px;
+        text-align:center;
+    }
+
+    .title-section h2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 30px;
+        color: #fff;
+        background: #e67e22; /* Carrot color */
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .title-section p {
+        color: #555;
+        margin-top: 0.3rem;
+        font-size:1rem;
+    }
+
+    .btn {
+        border-radius: 50px;
+        font-weight:600;
+        font-size:0.9rem;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #f1f1f1;
+        color: #000;
+    }
+    .btn-outline-primary:hover {
+        background-color: #007aff;
+        color: #fff;
+    }
+    .btn-outline-danger:hover {
+        background-color: #ff3b30;
+        color: #fff;
+    }
+    .btn-outline-info:hover {
+        background-color: #5ac8fa;
+        color: #fff;
+    }
+
+    .card-header-actions {
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        justify-content:center;
+        margin-bottom:20px;
+    }
+
+    .card {
+        border:none;
+        border-radius:20px;
+        transition: transform 0.3s;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    .info-card {
+        background: #f7f9fc;
+        border-radius:20px;
+        padding:20px;
+        box-shadow:0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .info-card label {
+        font-weight:600;
+        color:#333;
+    }
+
+    .info-card .text-dark {
+        color:#444 !important;
+        margin-bottom:0.5rem;
+    }
+
+    .img-fluid {
+        transition: transform 0.3s;
+    }
+    .img-fluid:hover {
+        transform: scale(1.05);
+    }
+
+    .text-secondary {
+        color:#555 !important;
+    }
+
+    .text-success {
+        color:#43a047 !important;
+    }
+
+    .animate__animated {
+        animation-duration:0.8s;
+    }
+
+    .table thead {
+        background-color: #fffbf2;
+        border-bottom: 2px solid #e67e22;
+    }
+
+    .table thead th {
+        color:#e67e22;
+        font-weight:700;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #fef6e7 !important;
+    }
+
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .clickable-row:hover {
+        background-color: #f9f9f9 !important;
+    }
+
+    .fw-bold {
+        font-weight:700;
+    }
+
+    .overflow-auto {
+        white-space: nowrap;
+    }
+
+    .container-fluid {
+        max-width:1200px;
+    }
+
+    /* Hover states for action buttons */
+    .btn-outline-secondary:hover {
+        background-color:#e0e0e0;
+    }
+
+    .title-emoji {
+        font-size:1.5rem;
+        vertical-align:middle;
+    }
+
+</style>
+
 <script>
     function printPage() {
         window.print();
@@ -68,12 +204,42 @@
     document.addEventListener('DOMContentLoaded', () => {
         calculateTotal();
         openTable();
+        // Make rows clickable
+        document.querySelectorAll('.clickable-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const href = row.getAttribute('data-href');
+                if (href) window.location.href = href;
+            });
+        });
     });
 </script>
 
+<div class="title-section animate__animated animate__fadeInDown">
+    <h2><span class="title-emoji">👨‍🎓</span> Student Details</h2>
+    <p>View this student's information, manage actions, and review invoice/payment history.</p>
+</div>
+
+<div class="card-header-actions">
+    <button class="btn btn-outline-secondary btn-sm shadow-sm" onclick="printPage()">
+        <i class="fas fa-print"></i> Print
+    </button>
+    <a href="{% url 'student-update' object.id %}" class="btn btn-outline-primary btn-sm shadow-sm">
+        <i class="fas fa-edit"></i> Edit
+    </a>
+    <a href="{% url 'student-delete' object.id %}" class="btn btn-outline-danger btn-sm shadow-sm">
+        <i class="fas fa-trash-alt"></i> Delete
+    </a>
+    <button class="btn btn-outline-secondary btn-sm shadow-sm" onclick="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+    <a href="{% url 'student-list' %}" class="btn btn-outline-info btn-sm shadow-sm">
+        <i class="fas fa-list"></i> Student List
+    </a>
+</div>
+
 <div class="container-fluid mt-4" data-aos="fade-up">
     <div class="row mb-4">
-        <div class="col-md-4 text-center">
+        <div class="col-md-4 text-center animate__animated animate__fadeInLeft">
             <div class="mb-3">
                 {% if object.passport %}
                     <img src="{{ object.passport.url }}" alt="Student Photo" class="img-fluid rounded-circle shadow-lg" style="width: 150px; height: 150px; border: 3px solid #007aff;">
@@ -81,48 +247,48 @@
                     <img src="{% static 'dist/img/avatar.png' %}" alt="Default Avatar" class="img-fluid rounded-circle shadow-lg" style="width: 150px; height: 150px; border: 3px solid #007aff;">
                 {% endif %}
             </div>
-            <h4 class="fw-bold text-primary animate__animated animate__fadeInLeft">{{ object.firstname }} {{ object.middle_name }} {{ object.surname }}</h4>
-            <p class="text-secondary animate__animated animate__fadeInLeft">{{ object.registration_number }}</p>
-            <p class="text-success animate__animated animate__fadeInRight">{{ object.current_class }}</p>
-            <p class="text-secondary animate__animated animate__fadeInRight">{{ object.get_gender_display }} | {{ object.get_current_status_display }}</p>
+            <h4 class="fw-bold text-primary">{{ object.firstname }} {{ object.middle_name }} {{ object.surname }}</h4>
+            <p class="text-secondary">{{ object.registration_number }}</p>
+            <p class="text-success">{{ object.current_class }}</p>
+            <p class="text-secondary">{{ object.get_gender_display }} | {{ object.get_current_status_display }}</p>
         </div>
-        <div class="col-md-8">
-            <div class="card shadow-sm p-4" style="border-radius: 15px; background-color: #f7f9fc;">
+        <div class="col-md-8 animate__animated animate__fadeInRight">
+            <div class="info-card">
                 <div class="mb-2 border-bottom pb-2">
-                    <label class="fw-semibold text-dark">Date of Birth:</label>
+                    <label>🎂 Date of Birth:</label>
                     <p class="text-dark">{{ object.date_of_birth }}</p>
                 </div>
                 <div class="mb-2 border-bottom pb-2">
-                    <label class="fw-semibold text-dark">Father's Mobile Number:</label>
+                    <label>👨‍👧 Father's Mobile Number:</label>
                     <p class="text-dark">{{ object.father_mobile_number }}</p>
                 </div>
                 <div class="mb-2 border-bottom pb-2">
-                    <label class="fw-semibold text-dark">Mother's Mobile Number:</label>
+                    <label>👩‍👧 Mother's Mobile Number:</label>
                     <p class="text-dark">{{ object.mother_mobile_number }}</p>
                 </div>
                 <div class="mb-2 border-bottom pb-2">
-                    <label class="fw-semibold text-dark">Address:</label>
+                    <label>📍 Address:</label>
                     <p class="text-dark">{{ object.address }}</p>
                 </div>
                 <div class="mb-2">
-                    <label class="fw-semibold text-dark">Comments:</label>
+                    <label>💬 Comments:</label>
                     <p class="text-dark">{{ object.others }}</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <h4 class="mt-4 mb-3 fw-bold text-primary" data-aos="fade-up">Invoice/Payment History</h4>
+    <h4 class="mt-4 mb-3 fw-bold" style="color:#e67e22;" data-aos="fade-up">Invoice/Payment History</h4>
     <div class="overflow-auto" style="max-width: 100%; overflow-x: scroll;">
         {% if payments %}
             <div class="card p-3 shadow-sm" style="border-radius: 15px;">
                 <table id="payment-table" class="table table-bordered table-hover table-striped" style="opacity: 0; transition: opacity 0.5s ease; min-width: 800px;">
                     <thead class="table-light text-center">
                         <tr>
-                            <th class="text-primary">For</th>
-                            <th class="text-primary">Amount Payable</th>
-                            <th class="text-primary">Amount Paid</th>
-                            <th class="text-primary">Balance</th>
+                            <th>For</th>
+                            <th>Amount Payable</th>
+                            <th>Amount Paid</th>
+                            <th>Balance</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -150,56 +316,11 @@
         {% endif %}
     </div>
 </div>
-
-<style>
-    .card-header, .btn {
-        border-radius: 20px;
-    }
-
-    .btn-outline-secondary:hover {
-        background-color: #f1f1f1;
-        color: #000;
-    }
-
-    .btn-outline-primary:hover {
-        background-color: #007aff;
-        color: #fff;
-    }
-
-    .btn-outline-danger:hover {
-        background-color: #ff3b30;
-        color: #fff;
-    }
-
-    .btn-outline-info:hover {
-        background-color: #5ac8fa;
-        color: #fff;
-    }
-
-    .table thead {
-        background-color: #e0f7fa;
-        border-bottom: 2px solid #007aff;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: #f1faff;
-    }
-
-    .clickable-row {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-
-    .clickable-row:hover {
-        background-color: #f9f9f9;
-    }
-
-    .fw-bold {
-        font-weight: 700;
-    }
-
-    .overflow-auto {
-        white-space: nowrap;
-    }
-</style>
 {% endblock content %}
+
+{% block morejs %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  AOS.init({ duration: 1000, once: true });
+</script>
+{% endblock morejs %}

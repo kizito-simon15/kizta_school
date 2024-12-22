@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load widget_tweaks humanize %}
+
+{% block title %}
+Update Invoice {{ object }}
+{% endblock title %}
+
+{% block content %}
+<style>
+    body {
+        background: #fdfbfb;
+    }
+
+    .title-section {
+        margin: 20px;
+    }
+
+    .title-section h2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        color: #fff;
+        background: #e67e22; 
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .title-section p {
+        color: #555;
+        margin-top: 0.5rem;
+    }
+
+    .form-section-title {
+        font-size:1.1rem;
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:0.5rem;
+        margin:20px;
+        color:#444;
+    }
+
+    .form-section-title .emoji {
+        font-size:1.2rem;
+        vertical-align:middle;
+    }
+
+    .form-text {
+        font-size:0.9rem;
+        color:#666;
+        margin: 0 20px 1rem 20px;
+    }
+
+    .btn-primary-save {
+        border-radius: 50px;
+        font-weight:600;
+        background: linear-gradient(135deg, #66bb6a, #43a047);
+        border:none;
+        color:#fff;
+        font-size:0.9rem;
+        padding:10px 20px;
+    }
+
+    .btn-secondary-back {
+        border-radius:50px;
+        font-weight:600;
+        background:#ffc107;
+        border:none;
+        color:#333;
+        font-size:0.9rem;
+        padding:10px 20px;
+        display:inline-flex;
+        align-items:center;
+        gap:0.5rem;
+    }
+
+    .invoice-form-container {
+        margin:20px;
+        background:#fff;
+        border-radius:15px;
+        box-shadow:0 2px 5px rgba(0,0,0,0.05);
+        padding:20px;
+    }
+
+    .invoice-form-container h5 {
+        font-weight:600;
+        color:#333;
+    }
+
+    .invoice-form-container label.form-label {
+        font-weight:600;
+    }
+
+    .invoice-form-container .text-muted {
+        font-size:0.9rem;
+        margin-bottom:10px;
+    }
+
+    .form-control, .form-select {
+        color: deepskyblue; 
+        border-radius: 50px; 
+        border: 1px solid #ccc;
+    }
+
+    .form-control::placeholder, .form-select::placeholder {
+        color: #8fcceb; 
+    }
+
+    .input-group-text {
+        border-radius: 50px 0 0 50px; 
+        background: #eaf7ff; 
+        border: none;
+        font-size: 1.1rem;
+    }
+
+    .form-check-input[type="checkbox"].form-switch:checked {
+        background-color: #e67e22 !important;
+        border-color: #e67e22 !important;
+    }
+</style>
+
+<div style="padding:20px;">
+    <div class="title-section">
+        <h2>🧾 Update Invoice</h2>
+        <p>Modify the invoice details, items, and receipts. Ensure all required fields are correctly filled before saving.</p>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3" style="margin:20px;">
+        <h4 class="m-0" style="color:#e67e22;font-weight:600;">
+            <i class="fas fa-edit"></i> Editing Invoice {{ object }}
+        </h4>
+        <a href="{% url 'invoice-detail' object.id %}" class="btn-secondary-back">
+            <i class="fas fa-arrow-left"></i> Back to Details
+        </a>
+    </div>
+
+    <div class="invoice-form-container">
+        <form method="POST">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger" style="margin:20px;">
+                <ul class="mb-0">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <h5 class="form-section-title"><span class="emoji">📄</span> Main Invoice Fields</h5>
+            <div class="row g-3" style="margin:0 20px;">
+                {% for field in form %}
+                    {% if field.name not in 'item_description item_amount' %}
+                        <div class="col-md-6">
+                            <label class="form-label">{{ field.label }}{% if field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            <div class="input-group">
+                                {{ field }}
+                            </div>
+                            {% if field.help_text %}
+                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% if field.errors %}
+                            <small class="text-danger">{{ field.errors|join:", " }}</small>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.item_description.label }}</label>
+                    <div class="input-group">
+                        {{ form.item_description }}
+                    </div>
+                    {% if form.item_description.help_text %}
+                    <small class="form-text text-muted">{{ form.item_description.help_text }}</small>
+                    {% endif %}
+                    {% if form.item_description.errors %}
+                    <small class="text-danger">{{ form.item_description.errors|join:", " }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.item_amount.label }}</label>
+                    <div class="input-group">
+                        {{ form.item_amount }}
+                    </div>
+                    {% if form.item_amount.help_text %}
+                    <small class="form-text text-muted">{{ form.item_amount.help_text }}</small>
+                    {% endif %}
+                    {% if form.item_amount.errors %}
+                    <small class="text-danger">{{ form.item_amount.errors|join:", " }}</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <h5 class="form-section-title mt-4"><span class="emoji">🏷️</span>Invoice Items</h5>
+            <p class="form-text">Add or edit the line items associated with this invoice. Remove items if not needed.</p>
+            {{ items.management_form }}
+            {{ items.non_form_errors }}
+            {% for form_item in items %}
+                {{ form_item.id }} {# Include the hidden id field #}
+                {{ form_item.non_field_errors }}
+                <div class="row g-3 align-items-end mb-3" style="margin:0 20px;">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form_item.description.label }}</label>
+                        <div class="input-group">
+                            {{ form_item.description }}
+                        </div>
+                        {% if form_item.description.errors %}
+                        <small class="text-danger">{{ form_item.description.errors|join:", " }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ form_item.amount.label }}</label>
+                        <div class="input-group">
+                            {{ form_item.amount }}
+                        </div>
+                        {% if form_item.amount.errors %}
+                        <small class="text-danger">{{ form_item.amount.errors|join:", " }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2 d-flex align-items-center">
+                        {% if form_item.DELETE %}
+                            <div class="form-check form-switch ms-2">
+                                {{ form_item.DELETE }}
+                                <label class="form-check-label" for="{{ form_item.DELETE.id_for_label }}">Remove</label>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+
+            <h5 class="form-section-title mt-4"><span class="emoji">💳</span>Receipts</h5>
+            <p class="form-text">Add or edit receipts for payments made against this invoice.</p>
+            {{ receipts.management_form }}
+            {{ receipts.non_form_errors }}
+            {% for receipt_form in receipts %}
+                {{ receipt_form.id }} {# Include the hidden id field #}
+                {{ receipt_form.non_field_errors }}
+                <div class="row g-3 align-items-end mb-3" style="margin:0 20px;">
+                    <div class="col-md-3">
+                        <label class="form-label">{{ receipt_form.amount_paid.label }}</label>
+                        <div class="input-group">
+                            {{ receipt_form.amount_paid }}
+                        </div>
+                        {% if receipt_form.amount_paid.errors %}
+                        <small class="text-danger">{{ receipt_form.amount_paid.errors|join:", " }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ receipt_form.date_paid.label }}</label>
+                        <div class="input-group">
+                            {{ receipt_form.date_paid }}
+                        </div>
+                        {% if receipt_form.date_paid.errors %}
+                        <small class="text-danger">{{ receipt_form.date_paid.errors|join:", " }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ receipt_form.comment.label }}</label>
+                        <div class="input-group">
+                            {{ receipt_form.comment }}
+                        </div>
+                        {% if receipt_form.comment.errors %}
+                        <small class="text-danger">{{ receipt_form.comment.errors|join:", " }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">{{ receipt_form.payment_method.label }}</label>
+                        <div class="input-group">
+                            {{ receipt_form.payment_method }}
+                        </div>
+                        {% if receipt_form.payment_method.errors %}
+                        <small class="text-danger">{{ receipt_form.payment_method.errors|join:", " }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center">
+                        {% if receipt_form.DELETE %}
+                            <div class="form-check form-switch ms-2">
+                                {{ receipt_form.DELETE }}
+                                <label class="form-check-label" for="{{ receipt_form.DELETE.id_for_label }}">Remove</label>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="text-end mt-4" style="margin:20px;">
+                <button type="submit" class="btn-primary-save"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+
+{% block morejs %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  AOS.init({ duration: 1000, once: true });
+</script>
+{% endblock morejs %}

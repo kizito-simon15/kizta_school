@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.db.models import Max
 from .models import Category, Expenditure, ExpenditureInvoice
 from collections import defaultdict
-from .forms import ExpenditureInvoiceForm
+from .forms import ExpenditureInvoiceForm, CategoryForm
 import calendar
 
 

@@ -1,290 +1,410 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Active Pupils{% endblock title %}
-
-{% block breadcrumb %}
-<div class="d-flex justify-content-between mb-3">
-    <a class="btn btn-primary rounded-pill shadow-sm" href="{% url 'student-create' %}"><i class="fas fa-plus"></i> New pupil</a>
-    <a class="btn btn-primary rounded-pill shadow-sm" href="{% url 'student-upload' %}"><i class="fas fa-upload"></i> Upload pupils</a>
-</div>
-{% endblock breadcrumb %}
-
 {% block content %}
-<div class="container-fluid" data-aos="fade-up" data-aos-duration="1000">
-    <div class="row mb-4">
-        <div class="col-12 text-start">
-            <button id="archivedButton" class="btn btn-outline-primary rounded-pill shadow-sm"><i class="fas fa-archive"></i> Archived</button>
-            <button id="alumniButton" class="btn btn-outline-primary rounded-pill shadow-sm"><i class="fas fa-graduation-cap"></i> Alumni</button>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const classFilter = document.getElementById('classFilter');
+    const studentTable = document.getElementById('studentTable');
+    const rows = studentTable.querySelectorAll('tbody tr');
+
+    const totalMaleSpan = document.getElementById('total-male');
+    const totalFemaleSpan = document.getElementById('total-female');
+    const overallTotalSpan = document.getElementById('overall-total');
+
+    const sortNameBtn = document.getElementById('sortNameBtn');
+    const sortClassBtn = document.getElementById('sortClassBtn');
+    const sortSexBtn = document.getElementById('sortSexBtn');
+
+    let nameAscending = true;
+    let classAscending = true;
+    let sexAscending = true;
+
+    updateKPIs();
+
+    rows.forEach(row => {
+        row.addEventListener('click', () => {
+            rows.forEach(r => r.classList.remove('highlight'));
+            row.classList.add('highlight');
+        });
+    });
+
+    searchInput.addEventListener('input', () => {
+        filterRows();
+    });
+
+    classFilter.addEventListener('change', () => {
+        filterRows();
+    });
+
+    sortNameBtn.addEventListener('click', () => {
+        sortRows('data-name', nameAscending);
+        nameAscending = !nameAscending;
+        sortNameBtn.textContent = `Sort by Name ${nameAscending ? '▲' : '▼'}`;
+        updateKPIs();
+    });
+
+    sortClassBtn.addEventListener('click', () => {
+        sortRows('data-class', classAscending);
+        classAscending = !classAscending;
+        sortClassBtn.textContent = `Sort by Class ${classAscending ? '▲' : '▼'}`;
+        updateKPIs();
+    });
+
+    sortSexBtn.addEventListener('click', () => {
+        sortRows('data-sex', sexAscending);
+        sexAscending = !sexAscending;
+        sortSexBtn.textContent = `Sort by Sex ${sexAscending ? '▲' : '▼'}`;
+        updateKPIs();
+    });
+
+    function sortRows(attribute, ascending) {
+        const tbody = studentTable.querySelector('tbody');
+        const visibleRows = Array.from(rows).filter(r => r.style.display !== 'none');
+        visibleRows.sort((a, b) => {
+            const valA = a.getAttribute(attribute).toLowerCase();
+            const valB = b.getAttribute(attribute).toLowerCase();
+            return ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        });
+        visibleRows.forEach(r => tbody.appendChild(r));
+    }
+
+    function filterRows() {
+        const query = searchInput.value.toLowerCase();
+        const selectedClass = classFilter.value;
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            const cls = row.getAttribute('data-class');
+            const matchesName = name.includes(query);
+            const matchesClass = (selectedClass === "All") || (cls === selectedClass);
+            if (matchesName && matchesClass) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        updateKPIs();
+    }
+
+    function updateKPIs() {
+        let maleCount = 0;
+        let femaleCount = 0;
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            if (row.style.display !== 'none') {
+                visibleCount++;
+                const sex = row.getAttribute('data-sex');
+                if (sex === 'M') maleCount++;
+                else if (sex === 'F') femaleCount++;
+            }
+        });
+
+        totalMaleSpan.textContent = maleCount;
+        totalFemaleSpan.textContent = femaleCount;
+        overallTotalSpan.textContent = visibleCount;
+    }
+});
+</script>
+
+<style>
+    body {
+        background: #fdfbfb;
+    }
+
+    .title-bar {
+        margin-bottom: 1.5rem;
+    }
+
+    .title-bar h2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        color: #fff;
+        background: #e67e22; /* Carrot color */
+        font-size: 1.6rem;
+        font-weight:600;
+        margin-bottom:0.5rem;
+    }
+    .title-bar p {
+        color: #555;
+        margin-top:0.5rem;
+    }
+
+    .kpi-section {
+        margin-bottom:2rem;
+    }
+    .kpi-section h2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        color: #fff;
+        background: #e67e22; /* Carrot color */
+        font-size: 1.6rem;
+        font-weight:600;
+        margin-bottom:1rem;
+    }
+
+    .kpi-metrics {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .kpi-item {
+        background: linear-gradient(135deg, #b2ebf2, #c8e6c9);
+        flex: 1;
+        min-width: 150px;
+        border-radius: 15px;
+        padding: 15px;
+        text-align: center;
+        font-weight: 600;
+        color: #333;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .kpi-item h3 {
+        font-size:1rem;
+        margin-bottom:0.5rem;
+    }
+    .kpi-item span {
+        font-size:1.2rem;
+        color:#007aff;
+    }
+
+    .btn-primary-add {
+        border-radius: 50px;
+        font-weight:600;
+        background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+        border:none;
+        color:#fff;
+        font-size:0.9rem;
+        padding:10px 20px;
+    }
+
+    .controls-container {
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        align-items:center;
+        margin-bottom:1rem;
+    }
+
+    .search-input {
+        border-radius:50px;
+        border:1px solid #ccc;
+        padding:8px 14px;
+        font-size:0.9rem;
+        width:200px;
+    }
+
+    .sort-btn, .class-filter {
+        border-radius:50px;
+        font-weight:600;
+        border:none;
+        padding:8px 14px;
+        font-size:0.9rem;
+        cursor:pointer;
+    }
+
+    .sort-btn {
+        background:#ffeb3b;
+        color:#333;
+    }
+
+    .class-filter {
+        border:1px solid #ccc;
+        color:#333;
+        background:#fff;
+    }
+
+    table.table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width:100%;
+        border-radius:15px;
+        overflow:hidden;
+        background:#fff;
+    }
+    table.table thead tr {
+        background:deepskyblue;
+        color:black;
+        text-transform:uppercase;
+        font-size:0.9rem;
+    }
+    table.table thead th {
+        padding:12px;
+        border:none;
+        white-space:nowrap;
+    }
+
+    table.table tbody tr:nth-child(even) {
+        background:#fafafa;
+    }
+
+    table.table tbody tr {
+        border-bottom:1px solid #e0e0e0;
+        transition:background 0.2s;
+        cursor:pointer;
+    }
+    table.table tbody tr:hover {
+        background:#f0f8ff;
+    }
+    table.table tbody tr.highlight {
+        background:#d1ecf1;
+    }
+
+    table.table td {
+        padding:12px;
+        vertical-align:middle;
+        white-space:nowrap;
+        color:#333;
+        font-size:0.95rem;
+    }
+
+    .btn-sm {
+        font-size:0.8rem;
+        padding:6px 10px;
+        border-radius:20px;
+        font-weight:600;
+        border:none;
+        color:#fff;
+    }
+
+    .btn-info-view {
+        background:#007aff; 
+    }
+
+    .btn-success-edit {
+        background:#4caf50;
+    }
+
+    .btn-danger-delete {
+        background:#e53935;
+    }
+
+    .btn-sm i {
+        font-size:1rem;
+    }
+
+</style>
+
+<div style="padding:20px;">
+    <div class="title-bar">
+        <h2>🧑‍🎓 Active Students</h2>
+        <p>Manage and view all currently active students. Make edits, view details, or add new members easily.</p>
+    </div>
+
+    <div class="kpi-section">
+        <h2><i class="fas fa-chart-pie"></i> Key Metrics</h2>
+        <div class="kpi-metrics">
+            <div class="kpi-item">
+                <h3>👨 Total Male</h3>
+                <span id="total-male">{{ total_male }}</span>
+            </div>
+            <div class="kpi-item">
+                <h3>👩 Total Female</h3>
+                <span id="total-female">{{ total_female }}</span>
+            </div>
+            <div class="kpi-item">
+                <h3>👥 Overall Total</h3>
+                <span id="overall-total">{{ overall_total }}</span>
+            </div>
+        </div>
+        <div class="text-center">
+            <a class="btn btn-primary-add mb-3" href="{% url 'student-create' %}">
+                <i class="fas fa-user-plus"></i> Add New Student
+            </a>
         </div>
     </div>
 
-    <div class="card p-4 mb-4 shadow-sm">
-        <div class="form-group mb-3">
-            <label for="classSelect" class="fw-semibold" style="color: teal;">Select Class:</label>
-            <select id="classSelect" class="form-control form-select shadow-sm">
-                <option value="">All</option>
-                {% for student_class in student_classes %}
-                    <option value="{{ student_class.name }}">{{ student_class.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <button onclick="filterStudents()" class="btn btn-teal rounded-pill shadow-sm mb-3">Filter</button>
-        <div class="form-group">
-            <input type="text" id="searchInput" class="form-control rounded-pill shadow-sm" placeholder="Search by name, registration number, etc.">
-        </div>
+    <div class="controls-container">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search by name...">
+
+        <select id="classFilter" class="class-filter">
+            <option value="All">All Classes</option>
+            {% for cls in student_classes %}
+            <option value="{{ cls.name }}">{{ cls.name }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="sort-btn" id="sortNameBtn">Sort by Name ▲</button>
+        <button class="sort-btn" id="sortClassBtn">Sort by Class ▲</button>
+        <button class="sort-btn" id="sortSexBtn">Sort by Sex ▲</button>
     </div>
 
-    <div class="summary-table mb-4">
-        <table class="table table-hover table-bordered table-responsive-md shadow-sm">
-            <thead class="thead-teal text-center">
+    <div style="overflow-x:auto;">
+        <table class="table" id="studentTable">
+            <thead>
                 <tr>
-                    <th>Total Male Pupils</th>
-                    <th>Total Female Pupils</th>
-                    <th>Total Pupils</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="text-center">
-                    <td id="maleCount">0</td>
-                    <td id="femaleCount">0</td>
-                    <td id="totalCount">0</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div id="table-container" class="card p-4 shadow-sm" style="overflow-x: auto;">
-        <table id="studenttable" class="table table-bordered table-hover table-responsive-md">
-            <thead class="thead-teal">
-                <tr>
-                    <th>S/N</th>
-                    <th>Registration Number <span class="sort-arrow" onclick="sortTable(1, 'number', 'asc')">&#9650;</span><span class="sort-arrow" onclick="sortTable(1, 'number', 'desc')">&#9660;</span></th>
-                    <th>Fullname <span class="sort-arrow" onclick="sortTable(2, 'string', 'asc')">&#9650;</span><span class="sort-arrow" onclick="sortTable(2, 'string', 'desc')">&#9660;</span></th>
-                    <th>Current Class</th>
-                    <th>Gender <span class="sort-arrow" onclick="sortTable(4, 'gender', 'asc')">&#9650;</span><span class="sort-arrow" onclick="sortTable(4, 'gender', 'desc')">&#9660;</span></th>
-                    <th>Father's Mobile</th>
-                    <th>Mother's Mobile</th>
-                    <th>Status</th>
+                    <th>🔢 #</th>
+                    <th>🙎 Name</th>
+                    <th>👫 Sex</th>
+                    <th>🎓 Class</th>
+                    <th>👨 Father #</th>
+                    <th>👩 Mother #</th>
+                    <th>🔅 Status</th>
+                    <th>⚙️ Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for student in students %}
-                    <tr class="clickable-row" data-href="{% url 'student-detail' student.id %}">
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ student.registration_number }}</td>
-                        <td>{{ student.firstname }} {{ student.middle_name }} {{ student.surname }}</td>
-                        <td>{{ student.current_class }}</td>
-                        <td>{{ student.get_gender_display }}</td>
-                        <td>{{ student.father_mobile_number }}</td>
-                        <td>{{ student.mother_mobile_number }}</td>
-                        <td class="text-center">
-                            {% if student.current_status == "active" %}
-                                <i class="fas fa-check-circle text-success"></i>
-                            {% else %}
-                                <i class="fas fa-times-circle text-danger"></i>
-                            {% endif %}
-                        </td>
-                    </tr>
+                <tr 
+                    data-name="{{ student.firstname }} {{ student.middle_name }} {{ student.surname|default_if_none:'' }}"
+                    data-sex="{% if student.gender == 'male' %}M{% else %}F{% endif %}"
+                    {% if student.current_class %}
+                        data-class="{{ student.current_class.name }}"
+                    {% else %}
+                        data-class="None"
+                    {% endif %}
+                >
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ student.firstname }} {{ student.middle_name }} {{ student.surname }}</td>
+                    <td>
+                        {% if student.gender == 'male' %}
+                            M
+                        {% else %}
+                            F
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if student.current_class %}
+                            {{ student.current_class.name }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ student.father_mobile_number|default:"N/A" }}</td>
+                    <td>{{ student.mother_mobile_number|default:"N/A" }}</td>
+                    <td>
+                        {% if student.current_status == 'active' %}
+                            <span style="color:#4caf50;font-weight:600;">Active</span>
+                        {% else %}
+                            <span style="color:#f44336;font-weight:600;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a class="btn btn-sm btn-info-view" href="{% url 'student-detail' student.pk %}" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a class="btn btn-sm btn-success-edit" href="{% url 'student-update' student.pk %}" title="Edit Student">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a class="btn btn-sm btn-danger-delete" href="{% url 'student-delete' student.pk %}" title="Delete Student">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted" style="padding: 20px;">No active students found.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
-
-<div id="scrolling-container" class="mt-3">
-    <div id="scrolling-bar"></div>
-</div>
-
 {% endblock content %}
-
-{% block morejs %}
-<script>
-  document.getElementById('archivedButton').addEventListener('click', function() {
-    window.location.href = "{% url 'inactive-student-list' %}";
-  });
-
-  document.getElementById('alumniButton').addEventListener('click', function() {
-    window.location.href = "{% url 'completed-students' %}";
-  });
-
-  function updateSummary() {
-    const rows = document.getElementById("studenttable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-    let maleCount = 0;
-    let femaleCount = 0;
-
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i].style.display !== "none") {
-        const gender = rows[i].getElementsByTagName("td")[4].innerText.toLowerCase();
-        if (gender === "male") {
-          maleCount++;
-        } else if (gender === "female") {
-          femaleCount++;
-        }
-      }
-    }
-
-    document.getElementById("maleCount").innerText = maleCount;
-    document.getElementById("femaleCount").innerText = femaleCount;
-    document.getElementById("totalCount").innerText = maleCount + femaleCount;
-  }
-
-  function filterStudents() {
-    const selectedClass = document.getElementById("classSelect").value;
-    const rows = document.getElementById("studenttable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-    for (let i = 0; i < rows.length; i++) {
-      const currentClass = rows[i].getElementsByTagName("td")[3].innerText;
-      if (selectedClass === "" || selectedClass === currentClass) {
-        rows[i].style.display = "";
-      } else {
-        rows[i].style.display = "none";
-      }
-    }
-    updateSummary();
-    resetSerialNumbers();
-  }
-
-  function resetSerialNumbers() {
-    const visibleRows = document.querySelectorAll("#studenttable tbody tr:not([style*='display: none'])");
-    for (let i = 0; i < visibleRows.length; i++) {
-      visibleRows[i].getElementsByTagName("td")[0].innerText = i + 1;
-    }
-  }
-
-  document.getElementById("searchInput").addEventListener("keyup", function() {
-    const filter = this.value.toUpperCase();
-    const rows = document.getElementById("studenttable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-    for (let i = 0; i < rows.length; i++) {
-      const cells = rows[i].getElementsByTagName("td");
-      let found = false;
-      for (let j = 0; j < cells.length; j++) {
-        const textValue = cells[j].textContent || cells[j].innerText;
-        if (textValue.toUpperCase().indexOf(filter) > -1) {
-          found = true;
-          break;
-        }
-      }
-      if (found) {
-        rows[i].style.display = "";
-      } else {
-        rows[i].style.display = "none";
-      }
-    }
-    updateSummary();
-    resetSerialNumbers();
-  });
-
-  document.addEventListener("DOMContentLoaded", function() {
-    updateSummary();
-    resetSerialNumbers();
-  });
-
-  document.querySelectorAll(".clickable-row").forEach(row => {
-    row.addEventListener("click", function() {
-      window.location.href = this.getAttribute("data-href");
-    });
-  });
-
-  function syncScroll() {
-    const tableContainer = document.getElementById('table-container');
-    const scrollingBar = document.getElementById('scrolling-bar');
-    scrollingBar.scrollLeft = tableContainer.scrollLeft;
-  }
-
-  document.getElementById('table-container').addEventListener('scroll', syncScroll);
-  document.getElementById('scrolling-bar').addEventListener('scroll', function () {
-    document.getElementById('table-container').scrollLeft = this.scrollLeft;
-  });
-
-  function sortTable(columnIndex, type, order) {
-    const table = document.getElementById("studenttable");
-    const rows = Array.from(table.rows).slice(1);
-
-    rows.sort((a, b) => {
-      let cellA = a.cells[columnIndex].innerText.trim();
-      let cellB = b.cells[columnIndex].innerText.trim();
-
-      if (type === 'number') {
-        cellA = parseInt(cellA.split('/').pop(), 10);
-        cellB = parseInt(cellB.split('/').pop(), 10);
-      } else if (type === 'string' || type === 'gender') {
-        return order === 'asc' ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
-      }
-
-      return order === 'asc' ? (cellA > cellB ? 1 : -1) : (cellA < cellB ? 1 : -1);
-    });
-
-    rows.forEach(row => table.appendChild(row));
-    resetSerialNumbers();
-  }
-
-  const fakeContent = document.createElement('div');
-  fakeContent.style.width = document.getElementById('table-container').scrollWidth + 'px';
-  fakeContent.style.height = '1px';
-  document.getElementById('scrolling-bar').appendChild(fakeContent);
-</script>
-<script src="{% static 'js/animations/animations.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-<script>
-  AOS.init();
-</script>
-
-<style>
-  .thead-teal {
-    background-color: #008080;
-    color: white;
-  }
-
-  .clickable-row {
-    cursor: pointer;
-  }
-
-  .clickable-row:hover {
-    background-color: #f8f9fa;
-  }
-
-  .sort-arrow {
-    cursor: pointer;
-    padding-left: 5px;
-  }
-
-  .btn-teal {
-    background-color: #008080;
-    color: white;
-  }
-
-  .btn-teal:hover {
-    background-color: #006666;
-  }
-
-  #scrolling-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    overflow-x: auto;
-    background: #f1f1f1;
-    z-index: 1000;
-    border-top: 1px solid #ddd;
-  }
-
-  #scrolling-bar {
-    height: 20px;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
-  #scrolling-bar::-webkit-scrollbar {
-    height: 8px;
-  }
-
-  #scrolling-bar::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 10px;
-  }
-
-  #scrolling-bar::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
-</style>
-{% endblock morejs %}
